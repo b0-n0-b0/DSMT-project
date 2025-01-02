@@ -20,7 +20,7 @@ config :backend, BackendWeb.Endpoint,
     layout: false
   ],
   pubsub_server: Backend.PubSub,
-  live_view: [signing_salt: "gAgRyDXJ"]
+  live_view: [signing_salt: "88k8Esri"]
 
 # Configures the mailer
 #

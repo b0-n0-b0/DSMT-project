@@ -7,7 +7,7 @@ defmodule BackendWeb.Endpoint do
   @session_options [
     store: :cookie,
     key: "_backend_key",
-    signing_salt: "p8U4CYvl",
+    signing_salt: "IVgwW4jr",
     same_site: "Lax"
   ]
 

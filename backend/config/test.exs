@@ -1,5 +1,8 @@
 import Config
 
+# Only in tests, remove the complexity from the password hashing algorithm
+config :bcrypt_elixir, :log_rounds, 1
+
 # Configure your database
 #
 # The MIX_TEST_PARTITION environment variable can be used
@@ -7,7 +10,7 @@ import Config
 # Run `mix help test` for more information.
 config :backend, Backend.Repo,
   username: "postgres",
-  password: "postgres",
+  password: "hVvjgEUntLAgZpCvaVbX",
   hostname: "localhost",
   database: "backend_test#{System.get_env("MIX_TEST_PARTITION")}",
   pool: Ecto.Adapters.SQL.Sandbox,
@@ -17,7 +20,7 @@ config :backend, Backend.Repo,
 # you can enable the server option below.
 config :backend, BackendWeb.Endpoint,
   http: [ip: {127, 0, 0, 1}, port: 4002],
-  secret_key_base: "3ZRVb9sLwTRcY/qabQon/UAJ8T1T9rZ6nXCUv6jLIGIkQcw0sX05jD+iG71BchoR",
+  secret_key_base: "Hc/j4P1l4PrgFN8pg0ELZhk2NGLfXyKqMEFkW4OReY3ac19A9OMldXNditXZsWNl",
   server: false
 
 # In test we don't send emails
