@@ -3,7 +3,7 @@ defmodule Backend.Accounts.User do
   import Ecto.Changeset
 
   schema "users" do
-    field :email, :string
+    field :username, :string
     field :password, :string, virtual: true, redact: true
     field :hashed_password, :string, redact: true
     field :current_password, :string, virtual: true, redact: true
@@ -14,8 +14,8 @@ defmodule Backend.Accounts.User do
   @doc """
   A user changeset for registration.
 
-  It is important to validate the length of both email and password.
-  Otherwise databases may truncate the email without warnings, which
+  It is important to validate the length of both username and password.
+  Otherwise databases may truncate the username without warnings, which
   could lead to unpredictable or insecure behaviour. Long passwords may
   also be very expensive to hash for certain algorithms.
 
@@ -28,25 +28,24 @@ defmodule Backend.Accounts.User do
       validations on a LiveView form), this option can be set to `false`.
       Defaults to `true`.
 
-    * `:validate_email` - Validates the uniqueness of the email, in case
-      you don't want to validate the uniqueness of the email (like when
+    * `:validate_username` - Validates the uniqueness of the username, in case
+      you don't want to validate the uniqueness of the username (like when
       using this changeset for validations on a LiveView form before
       submitting the form), this option can be set to `false`.
       Defaults to `true`.
   """
   def registration_changeset(user, attrs, opts \\ []) do
     user
-    |> cast(attrs, [:email, :password])
-    |> validate_email(opts)
+    |> cast(attrs, [:username, :password])
+    |> validate_username(opts)
     |> validate_password(opts)
   end
 
-  defp validate_email(changeset, opts) do
+  defp validate_username(changeset, opts) do
     changeset
-    |> validate_required([:email])
-    |> validate_format(:email, ~r/^[^\s]+@[^\s]+$/, message: "must have the @ sign and no spaces")
-    |> validate_length(:email, max: 160)
-    |> maybe_validate_unique_email(opts)
+    |> validate_required([:username])
+    |> validate_length(:username, max: 160)
+    |> maybe_validate_unique_username(opts)
   end
 
   defp validate_password(changeset, opts) do
@@ -77,30 +76,16 @@ defmodule Backend.Accounts.User do
     end
   end
 
-  defp maybe_validate_unique_email(changeset, opts) do
-    if Keyword.get(opts, :validate_email, true) do
+  defp maybe_validate_unique_username(changeset, opts) do
+    if Keyword.get(opts, :validate_username, true) do
       changeset
-      |> unsafe_validate_unique(:email, Backend.Repo)
-      |> unique_constraint(:email)
+      |> unsafe_validate_unique(:username, Backend.Repo)
+      |> unique_constraint(:username)
     else
       changeset
     end
   end
 
-  @doc """
-  A user changeset for changing the email.
-
-  It requires the email to change otherwise an error is added.
-  """
-  def email_changeset(user, attrs, opts \\ []) do
-    user
-    |> cast(attrs, [:email])
-    |> validate_email(opts)
-    |> case do
-      %{changes: %{email: _}} = changeset -> changeset
-      %{} = changeset -> add_error(changeset, :email, "did not change")
-    end
-  end
 
   @doc """
   A user changeset for changing the password.
