@@ -7,7 +7,6 @@ defmodule Backend.Accounts.User do
     field :password, :string, virtual: true, redact: true
     field :hashed_password, :string, redact: true
     field :current_password, :string, virtual: true, redact: true
-    field :confirmed_at, :utc_datetime
 
     timestamps(type: :utc_datetime)
   end
