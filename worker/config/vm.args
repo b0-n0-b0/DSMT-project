@@ -1,0 +1,6 @@
+-sname worker
+
+-setcookie worker_cookie
+
++K true
++A30
