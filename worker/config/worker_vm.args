@@ -1,6 +1,6 @@
 -sname worker
 
--setcookie worker_cookie
+-setcookie system_cookie
 
 +K true
 +A30
