@@ -1,4 +1,4 @@
--sname worker
+-sname ${NODE_NAME:-worker}
 
 -setcookie system_cookie
 

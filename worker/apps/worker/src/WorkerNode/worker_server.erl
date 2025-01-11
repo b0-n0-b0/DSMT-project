@@ -12,11 +12,19 @@
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2]).
 
 start_link() ->
-  io:format("[Worker] -> starting new worker~n"),
-  gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
+    io:format("[Worker] -> starting mnesia setup~n"),
+    mnesia:start(),
+    {ok, MainNode} = application:get_env(main_node),
+    if 
+    
+        MainNode == node() -> mnesia_utils:initialize_schema([]), mnesia_utils:create_tables(), mnesia:info();
+        true -> gen_server:call({worker_server, MainNode},{add_node_to_mnesia_cluster, node()}),mnesia:info()
+    end,
+    io:format("[Worker] -> starting worker server ~n"),
+    gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
 
 init(_Args)->
-    {ok, #state{monitors = #{}}}.
+    {ok, #state{}}.
 
 setup_erlang_job(Content)->
     Filename =  "job.erl",
@@ -35,14 +43,19 @@ handle_call(ping, _From, State) ->
 % Compile received module
 handle_call({setup_erlang_job, Content}, _From, State)->
     io:format("[Worker] -> erlang job setup~n"),
-    {Pid, Ref} = spawn_monitor(fun() -> setup_erlang_job(Content) end), %%TODO: handle error message
-    {reply, done, #{monitors => maps:put(Ref, Pid, State#state.monitors)}};
+    {Pid, Ref} = spawn_monitor(fun() -> setup_erlang_job(Content) end),
+    {reply, done, #state{monitors = maps:put(Ref, Pid, State#state.monitors)}};
 
 % Execute the "map" function
 handle_call(start_erlang_job, _From, State)->
     io:format("[Worker] -> erlang job start~n"),
-    {Pid, Ref} = spawn_monitor(fun() -> job:run() end), %%TODO: handle error message
-    {reply, done, #{monitors => maps:put(Ref, Pid, State#state.monitors)}};
+    {Pid, Ref} = spawn_monitor(fun() -> job:run() end),
+    {reply, done, #state{monitors = maps:put(Ref, Pid, State#state.monitors)}};
+
+handle_call({add_node_to_mnesia_cluster, MnesiaNode}, _From, State)->
+    io:format("[Worker] -> Adding node ~p to Mnesia cluster~n", [MnesiaNode]),
+    mnesia_utils:add_node(MnesiaNode),
+    {reply, done, State};
 % Catch-all clause for unrecognized messages
 handle_call(_UnexpectedMessage, _From, State) ->
     {reply, {error, unsupported_request}, State}.
@@ -50,11 +63,10 @@ handle_call(_UnexpectedMessage, _From, State) ->
 %% TODO: check this
 %% Handle DOWN messages from monitored processes
 handle_info({'DOWN', Ref, process, _Pid, Reason}, State) ->
+    %%TODO: handle error message
     io:format("[Worker] -> Monitored process down. Ref: ~p, Reason: ~p~n", [Ref, Reason]),
     %% Remove the monitor from state
-    Monitors = maps:get(monitors, State),
-    UpdatedMonitors = maps:remove(Ref, Monitors),
-    {noreply, #state{monitors = UpdatedMonitors}};
+    {noreply, #state{monitors = maps:remove(Ref, State#state.monitors)}};
 %% Catch-all for other messages
 handle_info(Other, State) ->
     io:format("[Worker] -> Received unexpected message: ~p~n", [Other]),
