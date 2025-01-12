@@ -1,0 +1,6 @@
+-sname worker
+
+-setcookie system_cookie
+
++K true
++A30
