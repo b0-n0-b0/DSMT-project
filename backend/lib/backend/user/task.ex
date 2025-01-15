@@ -1,4 +1,4 @@
-defmodule Backend.Task do
+defmodule Backend.User.Task do
   use Ecto.Schema
   import Ecto.Changeset
 

@@ -1,3 +1,25 @@
-<section>
-  <h2>Hello World, from Phoenix!</h2>
-</section>
+<.header>
+  Listing Tasks
+  <:actions>
+    <.link href={~p"/tasks/new"}>
+      <.button>New Task</.button>
+    </.link>
+  </:actions>
+</.header>
+
+<.table id="tasks" rows={@tasks} row_click={&JS.navigate(~p"/tasks/#{&1}")}>
+  <:col :let={task} label="Title">{task.title}</:col>
+  <:col :let={task} label="Description">{task.description}</:col>
+  <:col :let={task} label="Erlang model">{task.erlang_model}</:col>
+  <:action :let={task}>
+    <div class="sr-only">
+      <.link navigate={~p"/tasks/#{task}"}>Show</.link>
+    </div>
+    <.link navigate={~p"/tasks/#{task}/edit"}>Edit</.link>
+  </:action>
+  <:action :let={task}>
+    <.link href={~p"/tasks/#{task}"} method="delete" data-confirm="Are you sure?">
+      Delete
+    </.link>
+  </:action>
+</.table>

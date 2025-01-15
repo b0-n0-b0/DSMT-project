@@ -29,7 +29,7 @@ defmodule BackendWeb.ClusterController do
   end
 
   def call_cluster(conn, %{"cluster" => cluster, "node" => node}) do
-    controller = "cluster_b"
+    controller = "cluster_a"
     case :rpc.call(:"controller_#{controller}@localhost", BackendWeb.ClusterController, :ping, [cluster, node]) do
       {:ok, response} ->
         json(conn, response)
