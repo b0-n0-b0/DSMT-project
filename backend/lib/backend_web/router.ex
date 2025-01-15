@@ -57,7 +57,10 @@ defmodule BackendWeb.Router do
   end
   scope "/", BackendWeb do
     pipe_through [:browser, :require_authenticated_user]
-    get "/task", TaskController, :index
+    get "/tasks", TaskController, :index
+    get "/tasks/new", TaskController, :new
+    post "/tasks/new", TaskController, :create
+    get "/tasks/:id", TaskController, :show
     # TEST ROUTE
     get "/call_cluster/:cluster/:node", ClusterController, :call_cluster
 

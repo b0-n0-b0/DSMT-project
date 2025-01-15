@@ -5,7 +5,8 @@ defmodule BackendWeb.TaskController do
   alias Backend.User.Task
 
   def index(conn, _params) do
-    tasks = User.list_tasks()
+    current_user = conn.assigns.current_user
+    tasks = User.list_tasks(current_user.id)
     render(conn, :index, tasks: tasks)
   end
 
@@ -27,19 +28,21 @@ defmodule BackendWeb.TaskController do
   end
 
   def show(conn, %{"id" => id}) do
-    task = User.get_task!(id)
+    current_user = conn.assigns.current_user
+    task = User.get_task!(id, current_user.id)
     render(conn, :show, task: task)
   end
 
   def edit(conn, %{"id" => id}) do
-    task = User.get_task!(id)
+    current_user = conn.assigns.current_user
+    task = User.get_task!(id, current_user.id)
     changeset = User.change_task(task)
     render(conn, :edit, task: task, changeset: changeset)
   end
 
   def update(conn, %{"id" => id, "task" => task_params}) do
-    task = User.get_task!(id)
-
+    current_user = conn.assigns.current_user
+    task = User.get_task!(id, current_user.id)
     case User.update_task(task, task_params) do
       {:ok, task} ->
         conn
@@ -52,7 +55,8 @@ defmodule BackendWeb.TaskController do
   end
 
   def delete(conn, %{"id" => id}) do
-    task = User.get_task!(id)
+    current_user = conn.assigns.current_user
+    task = User.get_task!(id, current_user.id)
     {:ok, _task} = User.delete_task(task)
 
     conn

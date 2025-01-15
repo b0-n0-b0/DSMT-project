@@ -8,9 +8,7 @@
 </.header>
 
 <.table id="tasks" rows={@tasks} row_click={&JS.navigate(~p"/tasks/#{&1}")}>
-  <:col :let={task} label="Title">{task.title}</:col>
-  <:col :let={task} label="Description">{task.description}</:col>
-  <:col :let={task} label="Erlang model">{task.erlang_model}</:col>
+  <:col :let={task}>{task.title}</:col>
   <:action :let={task}>
     <div class="sr-only">
       <.link navigate={~p"/tasks/#{task}"}>Show</.link>

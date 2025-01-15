@@ -17,9 +17,13 @@ defmodule Backend.User do
       [%Task{}, ...]
 
   """
-  def list_tasks do
-    Repo.all(Task)
-  end
+def list_tasks(id) do
+  query = from t in Task,
+          where: t.user_id == ^id,
+          select: t.title
+  Repo.all(query)
+end
+
 
   @doc """
   Gets a single task.
@@ -35,7 +39,11 @@ defmodule Backend.User do
       ** (Ecto.NoResultsError)
 
   """
-  def get_task!(id), do: Repo.get!(Task, id)
+  def get_task!(id, user_id) do
+    query = from t in Task,
+            where: t.user_id == ^user_id and t.id == ^id
+    Repo.one!(query)
+  end
 
   @doc """
   Creates a task.
