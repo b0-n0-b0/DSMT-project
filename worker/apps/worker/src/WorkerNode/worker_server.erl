@@ -27,10 +27,11 @@ init(_Args)->
     {ok, #state{}}.
 
 % Ping
-handle_call(ping, _From, State) ->
+handle_call(ping, From, State) ->
     % TO SEND MORE STUFF
-    {FromPid, _Tag} = _From,
-    FromPid ! {other_info},
+    % {FromPid, _Tag} = _From,
+    % FromPid ! {other_info},
+    io:format("[Worker] -> received ping from ~p~n",[From]),
     {reply, pong, State};
 
 % create task in DB
@@ -75,11 +76,15 @@ handle_call({add_node_to_mnesia_cluster, MnesiaNode}, _From, State)->
 % Catch-all clause for unrecognized messages
 handle_call(_UnexpectedMessage, _From, State) ->
     {reply, {error, unsupported_request}, State}.
+
 %%TODO: handle error message
 %% Handle DOWN messages from monitored processes
 handle_info({'DOWN', Ref, process, _Pid, Reason}, State) ->
     io:format("[Worker] -> Monitored process down. Ref: ~p, Reason: ~p~n", [Ref, Reason]),
     %% Remove the monitor from state
+    %% TODO: everytime a process ends we must communicate it to the elixir backend in order to provide live updates 
+    %% we also need to account for errors and stuff like that 
+    %% we need to cleanup the DB when all the processes are done.
     {noreply, #state{monitors = maps:remove(Ref, State#state.monitors), 
         task_id=State#state.task_id, 
         input_split_id=State#state.input_split_id,

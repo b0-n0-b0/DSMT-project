@@ -86,8 +86,7 @@ create_task(TaskId, TaskModule, InputSplits) ->
           end,
     mnesia:transaction(Fun).
 
-%% TODO: CLEANUP
-
+%%CLEANUP
 remove_task(TaskId)->
     Fun = fun()->
         mnesia:delete(task, TaskId, write),
