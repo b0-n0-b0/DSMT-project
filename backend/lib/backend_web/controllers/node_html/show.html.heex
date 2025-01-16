@@ -1,6 +1,5 @@
 <.header>
-  Node {@node.id}
-  <:subtitle>This is a node record from your database.</:subtitle>
+  {@node.name}
   <:actions>
     <.link href={~p"/clusters/#{@cluster_id}/nodes/#{@node}/edit"}>
       <.button>Edit node</.button>
@@ -9,8 +8,7 @@
 </.header>
 
 <.list>
-  <:item title="Name">{@node.name}</:item>
   <:item title="Status">{@node.status}</:item>
 </.list>
 
-<.back navigate={~p"/nodes"}>Back to nodes</.back>
+<.back navigate={~p"/clusters/#{@cluster_id}/nodes"}>Back to nodes</.back>

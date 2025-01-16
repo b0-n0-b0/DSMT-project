@@ -1,11 +1,12 @@
-<.simple_form :let={f} for={@changeset} action={@action}>
-  <.error :if={@changeset.action}>
+<.simple_form :let={f} for={@changeset} action={~p"/tasks"} multipart>
+  <.error :if={@changeset.action == :insert}>
     Oops, something went wrong! Please check the errors below.
   </.error>
-  <.input field={f[:title]} type="text" label="Title" />
-  <.input field={f[:description]} type="text" label="Description" />
-  <.input field={f[:erlang_model]} type="text" label="Erlang model" />
+
+  <.input field={f[:title]} type="text" label="Task title" required />
+  <.input field={f[:description]} type="text" label="Task description" required />
+  <.input field={f[:erlang_model]} type="file" label="Erlang Module" />
   <:actions>
-    <.button>Save Task</.button>
+    <.button phx-disable-with="Creating account..." class="w-full">Create task</.button>
   </:actions>
 </.simple_form>

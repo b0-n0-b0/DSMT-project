@@ -104,4 +104,5 @@ defmodule Backend.Nodes do
   def change_node(%Node{} = node, attrs \\ %{}) do
     Node.changeset(node, attrs)
   end
+
 end

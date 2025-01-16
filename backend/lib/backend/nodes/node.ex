@@ -13,7 +13,7 @@ defmodule Backend.Nodes.Node do
   @doc false
   def changeset(node, attrs) do
     node
-    |> cast(attrs, [:name, :status])
-    |> validate_required([:name, :status])
+    |> cast(attrs, [:name, :status, :cluster_id])
+    |> validate_required([:name, :status, :cluster_id])
   end
 end
