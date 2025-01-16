@@ -1,0 +1,24 @@
+<.header>
+  Listing Nodes
+  <:actions>
+    <.link href={~p"/clusters/#{@cluster_id}/nodes/new"}>
+      <.button>New Node</.button>
+    </.link>
+  </:actions>
+</.header>
+
+<.table id="nodes" rows={@nodes} row_click={&JS.navigate(~p"/clusters/#{@cluster_id}/nodes/#{&1}")}>
+  <:col :let={node} label="Name">{node.name}</:col>
+  <:col :let={node} label="Status">{node.status}</:col>
+  <:action :let={node}>
+    <div class="sr-only">
+      <.link navigate={~p"/clusters/#{@cluster_id}/nodes/#{node}"}>Show</.link>
+    </div>
+    <.link navigate={~p"/clusters/#{@cluster_id}/nodes/#{node}/edit"}>Edit</.link>
+  </:action>
+  <:action :let={node}>
+    <.link href={~p"/clusters/#{@cluster_id}/nodes/#{node}"} method="delete" data-confirm="Are you sure?">
+      Delete
+    </.link>
+  </:action>
+</.table>

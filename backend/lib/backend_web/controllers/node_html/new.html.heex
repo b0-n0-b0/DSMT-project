@@ -1,0 +1,8 @@
+<.header>
+  New Node
+  <:subtitle>Use this form to manage node records in your database.</:subtitle>
+</.header>
+
+<.node_form changeset={@changeset} action={~p"/clusters/#{@cluster_id}/nodes"} />
+
+<.back navigate={~p"/clusters/#{@cluster_id}/nodes"}>Back to nodes</.back>
