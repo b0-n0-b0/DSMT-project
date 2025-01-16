@@ -58,15 +58,10 @@ defmodule BackendWeb.Router do
 
   scope "/", BackendWeb do
     pipe_through [:browser, :require_authenticated_user]
-    get "/tasks", TaskController, :index
-    post "/tasks", TaskController, :create
-    get "/tasks/new", TaskController, :new
-    get "/tasks/:id", TaskController, :show
-    get "/tasks/:id/edit", TaskController, :edit
-    put "/tasks/:id", TaskController, :update
-    delete "/tasks/:id", TaskController, :delete
+    resources "/tasks", TaskController
+    resources "/clusters", ClusterController
     # TEST ROUTE
-    get "/call_cluster/:cluster/:node", ClusterController, :call_cluster
+    get "/call_cluster/:cluster/:node", ErlangClusterController, :call_cluster
 
   end
 

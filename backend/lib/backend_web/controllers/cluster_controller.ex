@@ -1,42 +1,66 @@
 defmodule BackendWeb.ClusterController do
   use BackendWeb, :controller
 
-  def ping(cluster, node) do
-    case GenServer.call({:worker_server, :"#{node}@#{cluster}"}, :ping) do
-      :pong ->
-        {:ok, %{result: "pong"}}
-      _ ->
-        {:error, %{error: "Unexpected response"}}
+  alias Backend.Clusters
+  alias Backend.Clusters.Cluster
+
+  def index(conn, _params) do
+    clusters = Clusters.list_clusters(conn.assigns.current_user.id)
+    render(conn, :index, clusters: clusters)
+  end
+
+  def new(conn, _params) do
+    changeset = Clusters.change_cluster(%Cluster{})
+    render(conn, :new, changeset: changeset)
+  end
+
+  def create(conn, %{"cluster" => cluster_params}) do
+    cluster =
+      cluster_params
+      |> Map.put("user_id", conn.assigns.current_user.id)
+    case Clusters.create_cluster(cluster) do
+      {:ok, cluster} ->
+        conn
+        |> put_flash(:info, "Cluster created successfully.")
+        |> redirect(to: ~p"/clusters/#{cluster}")
+
+      {:error, %Ecto.Changeset{} = changeset} ->
+        render(conn, :new, changeset: changeset)
     end
   end
 
-  def setup_erlang_task(cluster, node, TaskId, InputSplitId, ProcessNumber) do
-    case GenServer.call({:worker_server, :"#{node}@#{cluster}"}, {:setup_erlang_task, TaskId, InputSplitId, ProcessNumber}) do
-      {:done} ->
-        {:ok, %{result: "done"}}
-      {:error, reason}->
-        {:error, %{error: reason}}
+  def show(conn, %{"id" => id}) do
+    current_user = conn.assigns.current_user
+    cluster = Clusters.get_cluster!(id,current_user.id)
+    render(conn, :show, cluster: cluster)
+  end
+
+  def edit(conn, %{"id" => id}) do
+    cluster = Clusters.get_cluster!(id,conn.assigns.current_user.id)
+    changeset = Clusters.change_cluster(cluster)
+    render(conn, :edit, cluster: cluster, changeset: changeset)
+  end
+
+  def update(conn, %{"id" => id, "cluster" => cluster_params}) do
+    cluster = Clusters.get_cluster!(id,conn.assigns.current_user.id)
+
+    case Clusters.update_cluster(cluster, cluster_params) do
+      {:ok, cluster} ->
+        conn
+        |> put_flash(:info, "Cluster updated successfully.")
+        |> redirect(to: ~p"/clusters/#{cluster}")
+
+      {:error, %Ecto.Changeset{} = changeset} ->
+        render(conn, :edit, cluster: cluster, changeset: changeset)
     end
   end
 
-  def start_erlang_task(cluster, node) do
-    case GenServer.call({:worker_server, :"#{node}@#{cluster}"}, {:start_erlang_task}) do
-      :done ->
-        {:ok, %{result: "done"}}
-      _ ->
-        {:error, %{error: "this should not happen"}}
-    end
-  end
+  def delete(conn, %{"id" => id}) do
+    cluster = Clusters.get_cluster!(id,conn.assigns.current_user.id)
+    {:ok, _cluster} = Clusters.delete_cluster(cluster)
 
-  def call_cluster(conn, %{"cluster" => cluster, "node" => node}) do
-    controller = "cluster_a"
-    case :rpc.call(:"controller_#{controller}@localhost", BackendWeb.ClusterController, :ping, [cluster, node]) do
-      {:ok, response} ->
-        json(conn, response)
-      {:badrpc, reason} ->
-        json(conn, %{error: "RPC failed", reason: inspect(reason)})
-      {:error, error} ->
-        json(conn, error)
-    end
+    conn
+    |> put_flash(:info, "Cluster deleted successfully.")
+    |> redirect(to: ~p"/clusters")
   end
 end

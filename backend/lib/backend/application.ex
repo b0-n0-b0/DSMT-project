@@ -18,7 +18,7 @@ defmodule Backend.Application do
       # {Backend.Worker, arg},
       # Start to serve requests, typically the last entry
       BackendWeb.Endpoint,
-      {Backend.ClusterSupervisor, []}
+      {Backend.ErlangClusterSupervisor, []}
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html
@@ -28,7 +28,7 @@ defmodule Backend.Application do
     # TODO: REMOVE THIS TEST
     clusters = Application.get_env(:backend, :clusters)
     Enum.each(clusters, fn {name, %{cookie: cookie}} ->
-      Backend.ClusterSupervisor.start_cluster(name, cookie)
+      Backend.ErlangClusterSupervisor.start_cluster(name, cookie)
     end)
     {:ok, pid}
   end

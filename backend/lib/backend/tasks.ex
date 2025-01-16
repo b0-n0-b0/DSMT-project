@@ -1,12 +1,12 @@
-defmodule Backend.User do
+defmodule Backend.Tasks do
   @moduledoc """
-  The User context.
+  The Tasks context.
   """
 
   import Ecto.Query, warn: false
   alias Backend.Repo
 
-  alias Backend.User.Task
+  alias Backend.Tasks.Task
 
   @doc """
   Returns the list of tasks.

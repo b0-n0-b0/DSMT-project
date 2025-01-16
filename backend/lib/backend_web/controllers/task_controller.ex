@@ -1,17 +1,17 @@
 defmodule BackendWeb.TaskController do
   use BackendWeb, :controller
 
-  alias Backend.User
-  alias Backend.User.Task
+  alias Backend.Tasks
+  alias Backend.Tasks.Task
 
   def index(conn, _params) do
     current_user = conn.assigns.current_user
-    tasks = User.list_tasks(current_user.id)
+    tasks = Tasks.list_tasks(current_user.id)
     render(conn, :index, tasks: tasks)
   end
 
   def new(conn, _params) do
-    changeset = User.change_task(%Task{})
+    changeset = Tasks.change_task(%Task{})
     render(conn, :new, changeset: changeset)
   end
 
@@ -25,7 +25,7 @@ defmodule BackendWeb.TaskController do
 
     IO.inspect(task)
 
-    case User.create_task(task) do
+    case Tasks.create_task(task) do
       {:ok, task} ->
         conn
         |> put_flash(:info, "Task created successfully.")
@@ -38,26 +38,26 @@ defmodule BackendWeb.TaskController do
 
   def show(conn, %{"id" => id}) do
     current_user = conn.assigns.current_user
-    task = User.get_task!(id, current_user.id)
+    task = Tasks.get_task!(id, current_user.id)
     render(conn, :show, task: task)
   end
 
   def edit(conn, %{"id" => id}) do
     current_user = conn.assigns.current_user
-    task = User.get_task!(id, current_user.id)
-    changeset = User.change_task(task)
+    task = Tasks.get_task!(id, current_user.id)
+    changeset = Tasks.change_task(task)
     render(conn, :edit, task: task, changeset: changeset)
   end
 
   def update(conn, %{"id" => id, "task" => task_params}) do
     current_user = conn.assigns.current_user
-    task = User.get_task!(id, current_user.id)
+    task = Tasks.get_task!(id, current_user.id)
     content = File.read!(task_params["erlang_model"].path)
     task_params =
       task_params
       |> Map.put("erlang_model", content)
     IO.inspect(task_params)
-    case User.update_task(task, task_params) do
+    case Tasks.update_task(task, task_params) do
       {:ok, task} ->
         conn
         |> put_flash(:info, "Task updated successfully.")
@@ -70,8 +70,8 @@ defmodule BackendWeb.TaskController do
 
   def delete(conn, %{"id" => id}) do
     current_user = conn.assigns.current_user
-    task = User.get_task!(id, current_user.id)
-    {:ok, _task} = User.delete_task(task)
+    task = Tasks.get_task!(id, current_user.id)
+    {:ok, _task} = Tasks.delete_task(task)
 
     conn
     |> put_flash(:info, "Task deleted successfully.")

@@ -1,0 +1,16 @@
+<.header>
+  Cluster {@cluster.id}
+  <:subtitle>This is a cluster record from your database.</:subtitle>
+  <:actions>
+    <.link href={~p"/clusters/#{@cluster}/edit"}>
+      <.button>Edit cluster</.button>
+    </.link>
+  </:actions>
+</.header>
+
+<.list>
+  <:item title="Name">{@cluster.name}</:item>
+  <:item title="Cluster cookie">{@cluster.cluster_cookie}</:item>
+</.list>
+
+<.back navigate={~p"/clusters"}>Back to clusters</.back>
