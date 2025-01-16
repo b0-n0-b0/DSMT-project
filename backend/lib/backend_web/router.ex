@@ -55,12 +55,16 @@ defmodule BackendWeb.Router do
     get "/users/log_in", UserSessionController, :new
     post "/users/log_in", UserSessionController, :create
   end
+
   scope "/", BackendWeb do
     pipe_through [:browser, :require_authenticated_user]
     get "/tasks", TaskController, :index
+    post "/tasks", TaskController, :create
     get "/tasks/new", TaskController, :new
-    post "/tasks/new", TaskController, :create
     get "/tasks/:id", TaskController, :show
+    get "/tasks/:id/edit", TaskController, :edit
+    put "/tasks/:id", TaskController, :update
+    delete "/tasks/:id", TaskController, :delete
     # TEST ROUTE
     get "/call_cluster/:cluster/:node", ClusterController, :call_cluster
 

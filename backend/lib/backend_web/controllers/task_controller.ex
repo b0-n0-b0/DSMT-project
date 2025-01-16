@@ -16,7 +16,16 @@ defmodule BackendWeb.TaskController do
   end
 
   def create(conn, %{"task" => task_params}) do
-    case User.create_task(task_params) do
+    content = File.read!(task_params["erlang_model"].path)
+
+    task =
+      task_params
+      |> Map.put("erlang_model", content)
+      |> Map.put("user_id", conn.assigns.current_user.id)
+
+    IO.inspect(task)
+
+    case User.create_task(task) do
       {:ok, task} ->
         conn
         |> put_flash(:info, "Task created successfully.")
@@ -43,6 +52,11 @@ defmodule BackendWeb.TaskController do
   def update(conn, %{"id" => id, "task" => task_params}) do
     current_user = conn.assigns.current_user
     task = User.get_task!(id, current_user.id)
+    content = File.read!(task_params["erlang_model"].path)
+    task_params =
+      task_params
+      |> Map.put("erlang_model", content)
+    IO.inspect(task_params)
     case User.update_task(task, task_params) do
       {:ok, task} ->
         conn

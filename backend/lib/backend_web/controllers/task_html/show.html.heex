@@ -1,6 +1,5 @@
 <.header>
-  Task {@task.id}
-  <:subtitle>This is a task record from your database.</:subtitle>
+  {@task.title}
   <:actions>
     <.link href={~p"/tasks/#{@task}/edit"}>
       <.button>Edit task</.button>
@@ -9,7 +8,6 @@
 </.header>
 
 <.list>
-  <:item title="Title">{@task.title}</:item>
   <:item title="Description">{@task.description}</:item>
   <:item title="Erlang model">{@task.erlang_model}</:item>
 </.list>

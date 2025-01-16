@@ -19,8 +19,7 @@ defmodule Backend.User do
   """
 def list_tasks(id) do
   query = from t in Task,
-          where: t.user_id == ^id,
-          select: t.title
+          where: t.user_id == ^id
   Repo.all(query)
 end
 
@@ -41,7 +40,7 @@ end
   """
   def get_task!(id, user_id) do
     query = from t in Task,
-            where: t.user_id == ^user_id and t.id == ^id
+            where: t.user_id == ^(user_id) and t.id == ^(id)
     Repo.one!(query)
   end
 

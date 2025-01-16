@@ -14,7 +14,7 @@ defmodule Backend.User.Task do
   @doc false
   def changeset(task, attrs) do
     task
-    |> cast(attrs, [:title, :description, :erlang_model])
-    |> validate_required([:title, :description, :erlang_model])
+    |> cast(attrs, [:title, :description, :erlang_model,:user_id])
+    |> validate_required([:title, :description, :erlang_model,:user_id])
   end
 end
