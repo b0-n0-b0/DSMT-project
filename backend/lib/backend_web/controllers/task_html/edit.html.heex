@@ -2,17 +2,5 @@
   Edit Task {@task.id}
 </.header>
 
-<!-- <.task_form changeset={@changeset} action={~p"/tasks/#{@task}"} /> -->
-<.simple_form :let={f} for={@changeset} action={~p"/tasks/#{@task}"} multipart>
-  <.error :if={@changeset.action == :insert}>
-    Oops, something went wrong! Please check the errors below.
-  </.error>
-
-  <.input field={f[:title]} type="text" label="Task title" required />
-  <.input field={f[:description]} type="text" label="Task description" required />
-  <.input field={f[:erlang_model]} type="file" label="Erlang Module" />
-  <:actions>
-    <.button phx-disable-with="Creating account..." class="w-full">Update task</.button>
-  </:actions>
-</.simple_form>
+<.task_form changeset={@changeset} action={~p"/tasks/#{@task}"} />
 <.back navigate={~p"/tasks"}>Back to tasks</.back>

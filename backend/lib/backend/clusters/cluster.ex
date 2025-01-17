@@ -6,6 +6,7 @@ defmodule Backend.Clusters.Cluster do
     field :name, :string
     field :cluster_cookie, :string
     field :user_id, :id
+    field :task_id, :id
 
     timestamps(type: :utc_datetime)
   end

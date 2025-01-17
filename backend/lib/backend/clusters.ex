@@ -24,7 +24,13 @@ defmodule Backend.Clusters do
 
     Repo.all(query)
   end
+  def list_available_clusters(user_id) do
+    query =
+      from c in Cluster,
+        where: c.user_id == ^user_id and is_nil(c.task_id)
 
+    Repo.all(query)
+  end
   @doc """
   Gets a single cluster.
 

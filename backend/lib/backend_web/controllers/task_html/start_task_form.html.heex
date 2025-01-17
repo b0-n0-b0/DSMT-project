@@ -1,0 +1,17 @@
+<%= if @clusters && length(@clusters)> 0 do %>
+  <.simple_form :let={f} for={@changeset} action={~p"/tasks/#{@task}/start"}>
+    <.input 
+    field={{f, :cluster_id}}
+    type="select" 
+    label="Choose cluster" 
+    options={@clusters}
+    name="clusters"
+    value=""
+    />
+    <:actions>
+      <.button phx-disable-with="" class="w-full">Start task</.button>
+    </:actions>
+  </.simple_form>
+  <% else %>
+    <p>No clusters available.</p>
+<% end %>

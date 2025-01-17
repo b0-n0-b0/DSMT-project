@@ -12,4 +12,7 @@
   <:item title="Erlang model">{@task.erlang_model}</:item>
 </.list>
 
+<.start_task_form changeset={@changeset} action={~p"/tasks/#{@task}/start"} clusters={@clusters} task={@task} options={@clusters}/>
+
+
 <.back navigate={~p"/tasks"}>Back to tasks</.back>

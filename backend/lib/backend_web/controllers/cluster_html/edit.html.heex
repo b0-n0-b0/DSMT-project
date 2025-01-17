@@ -1,8 +1,7 @@
 <.header>
-  Edit Cluster {@cluster.id}
-  <:subtitle>Use this form to manage cluster records in your database.</:subtitle>
+  Edit Cluster {@cluster.name}
 </.header>
 
 <.cluster_form changeset={@changeset} action={~p"/clusters/#{@cluster}"} />
 
-<.back navigate={~p"/clusters"}>Back to clusters</.back>
+<.back navigate={~p"/clusters/#{@cluster}"}>Back to cluster</.back>
