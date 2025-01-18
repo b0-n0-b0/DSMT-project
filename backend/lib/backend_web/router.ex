@@ -60,7 +60,7 @@ defmodule BackendWeb.Router do
   scope "/", BackendWeb do
     pipe_through [:browser, :require_authenticated_user]
     resources "/tasks", TaskController
-    post "/tasks/:id", TaskController, :start_task
+    post "/tasks/:id/start", TaskController, :start_task
     resources "/clusters", ClusterController do
       resources "/nodes", NodeController
     end

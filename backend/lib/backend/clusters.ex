@@ -53,6 +53,12 @@ defmodule Backend.Clusters do
     Repo.one!(query)
   end
 
+  def get_available_cluster!(id, user_id) do
+    query =
+      from c in Cluster,
+        where: c.user_id == ^user_id and c.id == ^id and is_nil(c.task_id)
+    Repo.one!(query)
+  end
   @doc """
   Creates a cluster.
 

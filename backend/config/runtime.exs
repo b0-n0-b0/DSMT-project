@@ -22,7 +22,7 @@ end
 
 config :backend, :clusters,
 cluster_a: %{cookie: "antonio"},
-cluster_b: %{cookie: "antonio"}
+cluster_b: %{cookie: "keklmao"}
 
 
 if config_env() == :prod do

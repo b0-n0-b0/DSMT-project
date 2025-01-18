@@ -1,13 +1,13 @@
 <%= if @clusters && length(@clusters)> 0 do %>
-  <.simple_form :let={f} for={@changeset} action={~p"/tasks/#{@task}/start"}>
+  <.simple_form :let={f} for={} action={~p"/tasks/#{@task}/start"} multipart>
     <.input 
-    field={{f, :cluster_id}}
+    field={f[:cluster]}
     type="select" 
     label="Choose cluster" 
     options={@clusters}
-    name="clusters"
-    value=""
     />
+    <.input field={f[:processes]} type="number" label="Number of processes per node" />
+    <.input field={f[:input_file]} type="file" label="Input file" />
     <:actions>
       <.button phx-disable-with="" class="w-full">Start task</.button>
     </:actions>

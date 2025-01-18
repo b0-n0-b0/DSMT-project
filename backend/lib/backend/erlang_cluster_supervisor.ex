@@ -8,7 +8,7 @@ defmodule Backend.ErlangClusterSupervisor do
   def init(:ok), do: DynamicSupervisor.init(strategy: :one_for_one)
 
   def start_cluster(cluster_name, cluster_cookie) do
-    IO.puts("[ErlangClusterSupervisor] started ErlangClusterController node for #{cluster_name}")
+    IO.puts("[ErlangClusterSupervisor] started ErlangClusterController node for #{cluster_name} with cookie #{cluster_cookie}")
     spec = %{
       id: :"cluster_#{cluster_name}",
       start: {Backend.ErlangClusterController, :start_link, [cluster_name, cluster_cookie]},

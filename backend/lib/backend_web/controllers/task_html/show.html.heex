@@ -12,7 +12,12 @@
   <:item title="Erlang model">{@task.erlang_model}</:item>
 </.list>
 
-<.start_task_form changeset={@changeset} action={~p"/tasks/#{@task}/start"} clusters={@clusters} task={@task} options={@clusters}/>
-
-
+<%= case @task.status do %>
+  <% "created" -> %>
+    <.start_task_form changeset={@changeset} action={~p"/tasks/#{@task}/start"} clusters={@clusters} task={@task} options={@clusters}/>
+  <% "running" -> %>
+    TODO
+  <% "completed" -> %>
+    TODO
+<% end %>
 <.back navigate={~p"/tasks"}>Back to tasks</.back>

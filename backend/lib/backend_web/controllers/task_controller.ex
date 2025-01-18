@@ -4,7 +4,10 @@ defmodule BackendWeb.TaskController do
   alias Backend.Tasks
   alias Backend.Tasks.Task
   alias Backend.Clusters
-  plug :task_allowed when action not in [:index]
+
+  # PLUG
+  plug :task_allowed when action not in [:index, :start_task]
+  plug :task_not_running when action in [:start_task]
 
   defp task_allowed(conn, _opts) do
     try do
@@ -17,6 +20,26 @@ defmodule BackendWeb.TaskController do
         |> redirect(to: ~p"/tasks")
     end
   end
+  defp task_not_running(conn, _opts) do
+    try do
+      task = Tasks.get_task!(Map.get(conn.params, "id"), conn.assigns.current_user.id)
+      if task.status == "running" do
+        conn
+        |> put_flash(:error, "Task already running")
+        |> redirect(to: ~p"/tasks")
+        |> halt()
+      else
+        Clusters.get_available_cluster!(Map.get(conn.params, "cluster"), conn.assigns.current_user.id)
+        conn
+      end
+    rescue
+      Ecto.NoResultsError ->
+        conn
+        |> put_flash(:error, "Wrong task configuration")
+        |> redirect(to: ~p"/tasks")
+    end
+  end
+  # END PLUG
 
   def index(conn, _params) do
     current_user = conn.assigns.current_user
@@ -58,7 +81,7 @@ defmodule BackendWeb.TaskController do
       {name, id}  # Tuple with display text as name, and value as id
     end)
 
-    changeset = Tasks.change_task(task)
+    changeset = %{}
     render(conn, :show, task: task, clusters: clusters, changeset: changeset)
   end
 
@@ -66,6 +89,17 @@ defmodule BackendWeb.TaskController do
     task = Tasks.get_task!(id, conn.assigns.current_user.id)
     changeset = Tasks.change_task(task)
     render(conn, :edit, task: task, changeset: changeset)
+  end
+
+  def start_task(conn, %{"id" => id, "cluster" => cluster, "input_file" => input_file, "processes" => processes}) do
+    task = Tasks.get_task!(id, conn.assigns.current_user.id)
+    cluster = Clusters.get_available_cluster!(cluster, conn.assigns.current_user.id)
+    Tasks.update_task(task, %{"status" => "running"})
+    Clusters.update_cluster(cluster, %{"task_id" => id})
+    # TODO: actually start the erlang cluster
+    conn
+    |> put_flash(:info, "Task started successfully.")
+    |> redirect(to: ~p"/tasks/#{id}")
   end
 
   def update(conn, %{"id" => id, "task" => task_params}) do
@@ -95,14 +129,4 @@ defmodule BackendWeb.TaskController do
     |> redirect(to: ~p"/tasks")
   end
 
-  def start_task(conn, %{"id" => id, "start_params" => start_params}) do
-    task = Tasks.get_task!(id, conn.assigns.current_user.id)
-    # TODO: add task to cluster
-    # TODO: actually start the erlang cluster
-    IO.inspect(start_params["cluster"])
-    # Tasks.update_task(task, %{"status" => "running"})
-    conn
-    |> put_flash(:info, "Task started successfully.")
-    |> redirect(to: ~p"/tasks/#{id}")
-  end
 end

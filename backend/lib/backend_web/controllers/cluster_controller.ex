@@ -4,6 +4,20 @@ defmodule BackendWeb.ClusterController do
   alias Backend.Clusters
   alias Backend.Clusters.Cluster
 
+  plug :cluster_allowed when action not in [:index, :new, :create]
+
+  defp cluster_allowed(conn, _opts) do
+    try do
+      Clusters.get_cluster!(Map.get(conn.params, "id"), conn.assigns.current_user.id)
+      conn
+    rescue
+      Ecto.NoResultsError ->
+        conn
+        |> put_flash(:error, "Cluster does not exist")
+        |> redirect(to: ~p"/clusters")
+    end
+  end
+
   def index(conn, _params) do
     clusters = Clusters.list_clusters(conn.assigns.current_user.id)
     render(conn, :index, clusters: clusters)
