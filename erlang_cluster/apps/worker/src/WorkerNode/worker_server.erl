@@ -15,11 +15,8 @@ start_link() ->
     io:format("[Worker] -> starting mnesia setup~n"),
     mnesia:start(),
     {ok, MainNode} = application:get_env(main_node),
-    %%start mnesia or just aggregate to the cluster
-    if 
-        MainNode == node() -> mnesia_utils:initialize_schema([]), mnesia_utils:create_tables(), mnesia:info();
-        true -> gen_server:call({worker_server, MainNode},{add_node_to_mnesia_cluster, node()}),mnesia:info()
-    end,
+    % ask to be added to the mnesia cluster
+    gen_server:call({cowboy_listener, MainNode},{add_node_to_mnesia_cluster, node()}),mnesia:info(),
     io:format("[Worker] -> starting worker server ~n"),
     gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
 
@@ -33,13 +30,6 @@ handle_call(ping, From, State) ->
     % FromPid ! {other_info},
     io:format("[Worker] -> received ping from ~p~n",[From]),
     {reply, pong, State};
-
-% create task in DB
-% TODO: REMOVE ONCE THE FULL INTERACTION IS DONE
-handle_call({create_erlang_task, TaskId, TaskModule, InputSplits}, _From, State)->
-    mnesia_utils:create_task(TaskId,TaskModule,InputSplits),
-    io:format("[Worker] -> erlang task creation~n"),
-    {reply, done, State};
 
 % Compile received module
 handle_call({setup_erlang_task, TaskId, InputSplitId, ProcessNumber}, _From, State)->
@@ -67,12 +57,6 @@ handle_call(start_erlang_task, _From, State)->
         task_id=State#state.task_id, 
         input_split_id=State#state.input_split_id,
         processes_number=State#state.processes_number}};
-
-handle_call({add_node_to_mnesia_cluster, MnesiaNode}, _From, State)->
-    io:format("[Worker] -> Adding node ~p to Mnesia cluster~n", [MnesiaNode]),
-    mnesia_utils:add_node(MnesiaNode),
-    {reply, done, State};
-
 % Catch-all clause for unrecognized messages
 handle_call(_UnexpectedMessage, _From, State) ->
     {reply, {error, unsupported_request}, State}.
@@ -89,7 +73,6 @@ handle_info({'DOWN', Ref, process, _Pid, Reason}, State) ->
         task_id=State#state.task_id, 
         input_split_id=State#state.input_split_id,
         processes_number=State#state.processes_number}};
-
 %% Catch-all for other messages
 handle_info(Other, State) ->
     io:format("[Worker] -> Received unexpected message: ~p~n", [Other]),
