@@ -1,4 +1,4 @@
--module(cowboy_requests_handler).
+-module(cowboy_http_requests_handler).
  
 -export([init/2]).
  

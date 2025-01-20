@@ -11,11 +11,16 @@ start_link() ->
 routes() ->
   Routes = [
     % {OfferEndpoint, socket_listener, []}
-    {"/ping", cowboy_requests_handler, []}
+    % HTTP
+    {"/", cowboy_static, {priv_file, controller, "index.html"}},
+    {"/ping", cowboy_http_requests_handler, []}, %% test route
+    {"/websocket", cowboy_ws_requests_handler, [{stats_interval, list_to_integer("50")}]} %% test route
+    % WS
   ],
   {Routes}.
 
 init(_) ->
+  % TODO: take from env
   Port = 8080,
   {Routes} = routes(),
 
@@ -25,7 +30,8 @@ init(_) ->
   io:format("[ClusterController] -> new cowboy listener initialized with pid ~p at port ~p~n", [Pid, Port]),
   {ok, []}.
 
-% TODO: add endpoints to receive updates from workers
+% TODO: add endpoints to receive updates from workers ???
+% probably can do this with ws_info
 handle_call(Req, _, State) ->
   io:format("received request"),
   {reply, Req, State}.
