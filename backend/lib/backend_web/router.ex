@@ -64,9 +64,6 @@ defmodule BackendWeb.Router do
     resources "/clusters", ClusterController do
       resources "/nodes", NodeController
     end
-    # TEST ROUTE
-    get "/call_cluster/:cluster/:node", ErlangClusterController, :call_cluster
-
   end
 
   scope "/", BackendWeb do

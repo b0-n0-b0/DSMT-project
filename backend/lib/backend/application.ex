@@ -17,25 +17,19 @@ defmodule Backend.Application do
       # Start a worker by calling: Backend.Worker.start_link(arg)
       # {Backend.Worker, arg},
       # Start to serve requests, typically the last entry
-      BackendWeb.Endpoint,
-      {Backend.ErlangClusterSupervisor, []}
+      BackendWeb.Endpoint
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html
     # for other strategies and supported options
     opts = [strategy: :one_for_one, name: Backend.Supervisor]
-    {:ok, pid} =Supervisor.start_link(children, opts)
-    # TODO: REMOVE THIS TEST
-    clusters = Application.get_env(:backend, :clusters)
-    Enum.each(clusters, fn {name, %{cookie: cookie}} ->
-      Backend.ErlangClusterSupervisor.start_cluster(name, cookie)
-    end)
-    {:ok, pid}
+    Supervisor.start_link(children, opts)
   end
 
   # Tell Phoenix to update the endpoint configuration
   # whenever the application is updated.
   @impl true
+  @spec config_change(any(), any(), any()) :: :ok
   def config_change(changed, _new, removed) do
     BackendWeb.Endpoint.config_change(changed, removed)
     :ok

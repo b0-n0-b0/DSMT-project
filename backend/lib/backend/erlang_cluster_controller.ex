@@ -1,4 +1,6 @@
 defmodule Backend.ErlangClusterController do
+
+  # TODO: all comunication via HTTP bullshit
   def start_link(cluster_name, cluster_cookie) do
     Task.start(fn ->
       Node.start(:"controller_#{cluster_name}@localhost", :shortnames)

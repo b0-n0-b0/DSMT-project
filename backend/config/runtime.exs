@@ -20,11 +20,6 @@ if System.get_env("PHX_SERVER") do
   config :backend, BackendWeb.Endpoint, server: true
 end
 
-config :backend, :clusters,
-cluster_a: %{cookie: "antonio"},
-cluster_b: %{cookie: "keklmao"}
-
-
 if config_env() == :prod do
   database_url =
     System.get_env("DATABASE_URL") ||
