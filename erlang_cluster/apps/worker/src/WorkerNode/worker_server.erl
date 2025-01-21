@@ -14,9 +14,9 @@
 start_link() ->
     io:format("[Worker] -> starting mnesia setup~n"),
     mnesia:start(),
-    {ok, MainNode} = application:get_env(main_node),
+    {ok, ControllerNode} = application:get_env(controller_node),
     % ask to be added to the mnesia cluster
-    gen_server:call({cowboy_listener, MainNode},{add_node_to_mnesia_cluster, node()}),mnesia:info(),
+    gen_server:call({cowboy_listener, ControllerNode},{add_node_to_mnesia_cluster, node()}),mnesia:info(),
     io:format("[Worker] -> starting worker server ~n"),
     gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
 
@@ -44,7 +44,6 @@ handle_call({setup_erlang_task, TaskId, InputSplitId, ProcessNumber}, _From, Sta
         true ->
             {reply, {done}, #state{monitors=State#state.monitors, task_id=TaskId, input_split_id=InputSplitId, processes_number=ProcessNumber}}
     end;
-
 % Execute the "map" function
 handle_call(start_erlang_task, _From, State)->
     io:format("[Worker] -> starting erlang task~n"),

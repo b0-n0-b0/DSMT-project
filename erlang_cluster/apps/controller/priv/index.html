@@ -31,7 +31,7 @@
 
       function connect() {
         var host = window.document.location.host.replace(/:.*/, '');
-        var ws = new WebSocket('ws://' + host + ':8080/websocket');  // standalone config
+        var ws = new WebSocket('ws://' + host + ':1337/websocket');  // standalone config
         //var ws = new WebSocket('wss://' + host + '/websocket');  // heroku config
         ws.onopen = function () {
           console.log("connected to websocket");

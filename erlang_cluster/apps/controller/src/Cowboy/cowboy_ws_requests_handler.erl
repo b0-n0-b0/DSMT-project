@@ -3,7 +3,7 @@
 
 
 init(Req, State) ->
-    io:format("websocket connection initiated~n~p~n~nstate: ~p~n", [Req, State]),
+    io:format("[ClusterController] -> websocket connection initiated~n~p~n~nstate: ~p~n", [Req, State]),
     {cowboy_websocket, Req, State}.
 
 websocket_init([{stats_interval, SInterval}]) ->
@@ -11,7 +11,7 @@ websocket_init([{stats_interval, SInterval}]) ->
     {ok, [{stats_interval, SInterval}]}.
 
 websocket_handle(Data, State) ->
-    io:format("websocket data from client: ~p~n", [Data]),
+    io:format("[ClusterController] -> websocket data from client: ~p~n", [Data]),
     {ok, State}.
 
 websocket_info({timeout, _Ref, Msg}, [{stats_interval, SInterval}]) ->
@@ -26,5 +26,5 @@ ws_send(Pid, SInterval) ->
 
 
 terminate(_Reason, Req, _State) ->
-    io:format("websocket connection terminated~n~p~n", [maps:get(peer, Req)]),
+    io:format("[ClusterController] ->  connection terminated~n~p~n", [maps:get(peer, Req)]),
     ok.
