@@ -37,7 +37,6 @@ init(_) ->
 handle_call({add_node_to_mnesia_cluster, MnesiaNode}, _From, State)->
     io:format("[ClusterController] -> Adding node ~p to Mnesia cluster~n", [MnesiaNode]),
     mnesia_utils:add_node(MnesiaNode),
-    io:format("~p~n",[self()]),
     NewState = [MnesiaNode|State],
     {reply, done, NewState};
 
@@ -50,10 +49,21 @@ handle_cast(_, State) ->
   {noreply, State}.
 
 % Handle down nodes in State
-handle_info({create_erlang_task, [TaskId, TaskModule, Input]}, State)->
+handle_info({create_erlang_task, [TaskId, TaskModule, Input, ProcessNumber]}, State)->
   % io:format("~p~n~p~n~p~n",[binary_to_list(TaskId),binary_to_list(TaskModule),binary_to_list(InputSplits)]),
-  TokenizedInput = input_utils:input_line_tokenizer(Input),
-  % TODO: take input and split it between the nodes 
-  % mnesia_utils:create_task(binary_to_list(TaskId),binary_to_list(TaskModule),TokenizedInput),
   io:format("[ClusterController] -> erlang task creation~n"),
+  % TODO: handle division by 0
+  WorkerNumber = length(State),
+  % WorkerNumber = 1,
+  TokenizedInput = input_utils:input_line_tokenizer(Input),
+  InputSplits = input_utils:input_splitter(TokenizedInput, WorkerNumber),
+  io:format("Input Splits generated -> ~p~n",[InputSplits]),
+  InputSplitIds = mnesia_utils:create_task(binary_to_list(TaskId),binary_to_list(TaskModule),InputSplits),
+  io:format("[ClusterController] -> Task and InputSplits created in mnesia~n"),
+  % TODO: check availability with a ping or smthn like that
+  Nodes = State,
+  {ProcessNumberInteger, _} = string:to_integer(binary_to_list(ProcessNumber)),
+  % TODO: check for compilation errors in the setup phase
+  work_dispatch_utils:setup_worker_nodes(Nodes, binary_to_list(TaskId), InputSplitIds, ProcessNumberInteger),
+  work_dispatch_utils:start_worker_nodes(Nodes),
   {noreply, State}.

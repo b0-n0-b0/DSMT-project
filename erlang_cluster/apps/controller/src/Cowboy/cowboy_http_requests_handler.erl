@@ -15,7 +15,7 @@ init(Req, State) ->
 handle_post(Req, State) ->
     % {ok, Body, Req2} = cowboy_req:read_body(Req),
     {ok, Body, Req2} = cowboy_req:read_urlencoded_body(Req),
-    RequiredParams = [<<"TaskId">>, <<"ErlangModule">>, <<"Input">>],
+    RequiredParams = [<<"TaskId">>, <<"ErlangModule">>, <<"Input">>,<<"ProcessNumber">>],
     % io:format("~p~n",[Body]),
     case parse_body(Body, RequiredParams)of 
         {error, {missing_params, MissingParams}} ->

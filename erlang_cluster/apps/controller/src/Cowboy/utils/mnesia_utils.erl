@@ -29,17 +29,6 @@ add_node(Node) ->
     mnesia:change_config(extra_db_nodes,[Node]).
 
 %% UTILITIES
-%% Create an input split
-insert_input_split(TaskId, SplitNumber, [CurrentSplit|Others]) ->
-    Fun = fun() ->
-        mnesia:write(#input_split{
-            id = TaskId ++ "-" ++ integer_to_list(SplitNumber), 
-            task_id = TaskId,
-            data = CurrentSplit})
-    end,
-    mnesia:transaction(Fun),
-    insert_input_split(TaskId, SplitNumber + 1, Others);
-insert_input_split(_, _, []) -> ok.
 
 %% Create a partial result
 insert_partial_result(PartialResultId,TaskId, Data)->
@@ -74,17 +63,39 @@ get_task_code_by_id(TaskId)->
         end,
     {_, [{_,_,TaskModule}|_Rest]}= mnesia:transaction(Fun),
     TaskModule.
+
+%% util for input split IDs
+create_input_split_ids(_, 0, SplitIds)->
+    SplitIds;
+create_input_split_ids(TaskId,SplitNumber, SplitIds)->
+    CurrentSplitId = TaskId ++ "-" ++ integer_to_list(SplitNumber),
+    create_input_split_ids(TaskId, SplitNumber - 1, [CurrentSplitId | SplitIds]).
+
+%% Create an input split
+insert_input_split(_, [], _) -> ok;
+insert_input_split(TaskId, [CurrentSplit|Others], [CurrentInputSplitId|InputSplitIds]) ->
+    Fun = fun() ->
+        mnesia:write(#input_split{
+            id = CurrentInputSplitId, 
+            task_id = TaskId,
+            data = CurrentSplit})
+    end,
+    mnesia:transaction(Fun),
+    insert_input_split(TaskId, Others,InputSplitIds).
+
 %% Create a new task
 create_task(TaskId, TaskModule, InputSplits) ->
+    InputSplitIds = create_input_split_ids(TaskId, length(InputSplits),[]),
     Task = #task{
             id = TaskId,
             task_module = TaskModule
         },
     Fun = fun() ->
                 mnesia:write(Task),
-                insert_input_split(TaskId, 0, InputSplits)
+                insert_input_split(TaskId, InputSplits, InputSplitIds)
           end,
-    mnesia:transaction(Fun).
+    mnesia:transaction(Fun),
+    InputSplitIds.
 
 %%CLEANUP
 remove_task(TaskId)->
