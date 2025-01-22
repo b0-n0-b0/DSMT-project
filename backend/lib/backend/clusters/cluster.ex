@@ -4,7 +4,8 @@ defmodule Backend.Clusters.Cluster do
 
   schema "clusters" do
     field :name, :string
-    field :cluster_cookie, :string
+    field :cluster_api_key, :string
+    field :cluster_controller_url, :string
     field :user_id, :id
     field :task_id, :id
 
@@ -14,7 +15,7 @@ defmodule Backend.Clusters.Cluster do
   @doc false
   def changeset(cluster, attrs) do
     cluster
-    |> cast(attrs, [:name, :cluster_cookie, :user_id])
-    |> validate_required([:name, :cluster_cookie, :user_id])
+    |> cast(attrs, [:name, :cluster_api_key, :cluster_controller_url, :user_id])
+    |> validate_required([:name, :cluster_api_key, :cluster_controller_url, :user_id])
   end
 end

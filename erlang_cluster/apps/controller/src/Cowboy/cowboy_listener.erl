@@ -33,37 +33,42 @@ init(_) ->
   io:format("[ClusterController] -> new cowboy listener initialized with pid ~p at port ~p~n", [Pid, Port]),
   {ok, []}.
 
-% TODO: add endpoints to receive updates from workers -> send update to ws_info via cowboy PID
 handle_call({add_node_to_mnesia_cluster, MnesiaNode}, _From, State)->
     io:format("[ClusterController] -> Adding node ~p to Mnesia cluster~n", [MnesiaNode]),
     mnesia_utils:add_node(MnesiaNode),
     NewState = [MnesiaNode|State],
     {reply, done, NewState};
 
-handle_call({create_erlang_task, [TaskId, TaskModule, Input, ProcessNumber]}, _From,State)->
+handle_call({create_erlang_task, [TaskId, TaskModule, Input, ProcessNumber]}, _From, State)->
   % io:format("~p~n~p~n~p~n",[binary_to_list(TaskId),binary_to_list(TaskModule),binary_to_list(InputSplits)]),
   io:format("[ClusterController] -> erlang task creation~n"),
-  % TODO: handle division by 0
-  WorkerNumber = length(State),
-  TokenizedInput = input_utils:input_line_tokenizer(Input),
-  InputSplits = input_utils:input_splitter(TokenizedInput, WorkerNumber),
-  io:format("Input Splits generated -> ~p~n",[InputSplits]),
-  InputSplitIds = mnesia_utils:create_task(binary_to_list(TaskId),binary_to_list(TaskModule),InputSplits),
-  
-  io:format("[ClusterController] -> Task and InputSplits created in mnesia~n"),
-  % TODO: check availability with a ping or smthn like that
-  Nodes = State,
-  {ProcessNumberInteger, _} = string:to_integer(binary_to_list(ProcessNumber)),
-  % TODO: check for compilation errors in the setup phase
-  case work_dispatch_utils:setup_worker_nodes(Nodes, binary_to_list(TaskId), InputSplitIds, ProcessNumberInteger) of
-    {error, "compilation error"}->
-      {reply, {error, "compilation error"}, State};
-    {error, "the \"run/1\" function must be exported"}->
-        {reply, {error, "the \"run/1\" function must be exported"}, State};
-    ok ->
-      work_dispatch_utils:start_worker_nodes(Nodes),
-      {reply,done, State}
+  AvailableWorkers = work_dispatch_utils:get_available_nodes_list(State,[]),
+  case WorkerNumber = length(AvailableWorkers)of 
+  0 -> 
+    {reply,{error, "no worker nodes available in the cluster"},State};
+  _ ->
+    TokenizedInput = input_utils:input_line_tokenizer(Input),
+    InputSplits = input_utils:input_splitter(TokenizedInput, WorkerNumber),
+    io:format("Input Splits generated -> ~p~n",[InputSplits]),
+    InputSplitIds = mnesia_utils:create_task(binary_to_list(TaskId),binary_to_list(TaskModule),InputSplits),
+    
+    io:format("[ClusterController] -> Task and InputSplits created in mnesia~n"),
+    Nodes = AvailableWorkers,
+    {ProcessNumberInteger, _} = string:to_integer(binary_to_list(ProcessNumber)),
+    case work_dispatch_utils:setup_worker_nodes(Nodes, binary_to_list(TaskId), InputSplitIds, ProcessNumberInteger) of
+      {error, "compilation error"}->
+        {reply, {error, "compilation error"}, State};
+      {error, "the \"run/1\" function must be exported"}->
+          {reply, {error, "the \"run/1\" function must be exported"}, State};
+      ok ->
+        work_dispatch_utils:start_worker_nodes(Nodes),
+        {reply,done, State}
+    end
   end;
+handle_call({worker_communication, Message}, _From, State)->
+% TODO: updates from workers -> send update to ws_info via cowboy PID
+  {reply,done, State};
+
 
 % Catch-all clause for unrecognized messages
 handle_call(_, _, State) ->

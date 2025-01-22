@@ -6,7 +6,7 @@ defmodule BackendWeb.TaskController do
   alias Backend.Clusters
 
   # PLUG
-  plug :task_allowed when action not in [:index, :start_task]
+  plug :task_allowed when action not in [:index, :start_task, :new, :create]
   plug :task_not_running when action in [:start_task]
 
   defp task_allowed(conn, _opts) do

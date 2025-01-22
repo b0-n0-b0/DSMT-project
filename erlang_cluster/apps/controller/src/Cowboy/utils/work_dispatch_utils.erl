@@ -1,5 +1,5 @@
 -module(work_dispatch_utils).
--export([setup_worker_nodes/4,start_worker_nodes/1]).
+-export([setup_worker_nodes/4,start_worker_nodes/1, get_available_nodes_list/2]).
 
 setup_worker_nodes([],_,_,_)->
     ok;
@@ -18,3 +18,13 @@ start_worker_nodes([])->
 start_worker_nodes([CurrentNode | Nodes])->
     gen_server:call({worker_server, CurrentNode}, start_erlang_task),
     start_worker_nodes(Nodes).
+
+get_available_nodes_list([],AvailableNodes)->
+    AvailableNodes;
+get_available_nodes_list([Node | Nodes], AvailableNodes)->
+    case net_adm:ping(Node) of
+        pong->
+            get_available_nodes_list(Nodes,[Node|AvailableNodes]);
+        pang ->
+            get_available_nodes_list(Nodes,[AvailableNodes])
+    end.

@@ -1,5 +1,4 @@
 defmodule BackendWeb.Router do
-  alias BackendWeb.NodeController
   use BackendWeb, :router
 
   import BackendWeb.UserAuth
@@ -61,9 +60,7 @@ defmodule BackendWeb.Router do
     pipe_through [:browser, :require_authenticated_user]
     resources "/tasks", TaskController
     post "/tasks/:id/start", TaskController, :start_task
-    resources "/clusters", ClusterController do
-      resources "/nodes", NodeController
-    end
+    resources "/clusters", ClusterController
   end
 
   scope "/", BackendWeb do

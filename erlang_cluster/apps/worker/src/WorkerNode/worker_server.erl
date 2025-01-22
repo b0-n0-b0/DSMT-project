@@ -68,6 +68,8 @@ handle_info({'DOWN', Ref, process, _Pid, Reason}, State) ->
     %% TODO: everytime a process ends we must communicate it to the elixir backend in order to provide live updates 
     %% we also need to account for errors and stuff like that 
     %% we need to cleanup the DB when all the processes are done.
+    {_,ControllerNode}=application:get_env(controller_node),
+    gen_server:call({cowboy_listener, ControllerNode}, {worker_communication, worker_done}),
     {noreply, #state{monitors = maps:remove(Ref, State#state.monitors), 
         task_id=State#state.task_id, 
         input_split_id=State#state.input_split_id,

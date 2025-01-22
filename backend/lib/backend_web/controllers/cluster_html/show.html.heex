@@ -4,14 +4,12 @@
     <.link href={~p"/clusters/#{@cluster}/edit"}>
       <.button>Edit cluster</.button>
     </.link>
-    <.link href={~p"/clusters/#{@cluster}/nodes"}>
-      <.button>Cluster nodes</.button>
-    </.link>
   </:actions>
 </.header>
 
 <.list>
-  <:item title="Cluster cookie">{@cluster.cluster_cookie}</:item>
+  <:item title="Cluster controller node URL">{@cluster.cluster_controller_url}</:item>
+  <:item title="Cluster API key">{@cluster.cluster_api_key}</:item>
 </.list>
 
 <.back navigate={~p"/clusters"}>Back to clusters</.back>
