@@ -2,7 +2,7 @@
 -behaviour(gen_server).
 
 %% API
--export([start_link/0, init/1, handle_call/3, handle_cast/2, handle_info/2]).
+-export([start_link/0, init/1, handle_call/3, handle_cast/2]).
 
 start_link() ->
   io:format("[ClusterController] -> starting mnesia server"),
@@ -40,30 +40,35 @@ handle_call({add_node_to_mnesia_cluster, MnesiaNode}, _From, State)->
     NewState = [MnesiaNode|State],
     {reply, done, NewState};
 
+handle_call({create_erlang_task, [TaskId, TaskModule, Input, ProcessNumber]}, _From,State)->
+  % io:format("~p~n~p~n~p~n",[binary_to_list(TaskId),binary_to_list(TaskModule),binary_to_list(InputSplits)]),
+  io:format("[ClusterController] -> erlang task creation~n"),
+  % TODO: handle division by 0
+  WorkerNumber = length(State),
+  TokenizedInput = input_utils:input_line_tokenizer(Input),
+  InputSplits = input_utils:input_splitter(TokenizedInput, WorkerNumber),
+  io:format("Input Splits generated -> ~p~n",[InputSplits]),
+  InputSplitIds = mnesia_utils:create_task(binary_to_list(TaskId),binary_to_list(TaskModule),InputSplits),
+  
+  io:format("[ClusterController] -> Task and InputSplits created in mnesia~n"),
+  % TODO: check availability with a ping or smthn like that
+  Nodes = State,
+  {ProcessNumberInteger, _} = string:to_integer(binary_to_list(ProcessNumber)),
+  % TODO: check for compilation errors in the setup phase
+  case work_dispatch_utils:setup_worker_nodes(Nodes, binary_to_list(TaskId), InputSplitIds, ProcessNumberInteger) of
+    {error, "compilation error"}->
+      {reply, {error, "compilation error"}, State};
+    {error, "the \"run/1\" function must be exported"}->
+        {reply, {error, "the \"run/1\" function must be exported"}, State};
+    ok ->
+      work_dispatch_utils:start_worker_nodes(Nodes),
+      {reply,done, State}
+  end;
+
 % Catch-all clause for unrecognized messages
 handle_call(_, _, State) ->
   io:format("[ClusterController] -> received unexpected request"),
   {reply, {error, unsupported_request}, State}.
 
 handle_cast(_, State) ->
-  {noreply, State}.
-
-% Handle down nodes in State
-handle_info({create_erlang_task, [TaskId, TaskModule, Input, ProcessNumber]}, State)->
-  % io:format("~p~n~p~n~p~n",[binary_to_list(TaskId),binary_to_list(TaskModule),binary_to_list(InputSplits)]),
-  io:format("[ClusterController] -> erlang task creation~n"),
-  % TODO: handle division by 0
-  WorkerNumber = length(State),
-  % WorkerNumber = 1,
-  TokenizedInput = input_utils:input_line_tokenizer(Input),
-  InputSplits = input_utils:input_splitter(TokenizedInput, WorkerNumber),
-  io:format("Input Splits generated -> ~p~n",[InputSplits]),
-  InputSplitIds = mnesia_utils:create_task(binary_to_list(TaskId),binary_to_list(TaskModule),InputSplits),
-  io:format("[ClusterController] -> Task and InputSplits created in mnesia~n"),
-  % TODO: check availability with a ping or smthn like that
-  Nodes = State,
-  {ProcessNumberInteger, _} = string:to_integer(binary_to_list(ProcessNumber)),
-  % TODO: check for compilation errors in the setup phase
-  work_dispatch_utils:setup_worker_nodes(Nodes, binary_to_list(TaskId), InputSplitIds, ProcessNumberInteger),
-  work_dispatch_utils:start_worker_nodes(Nodes),
   {noreply, State}.

@@ -23,13 +23,18 @@ handle_post(Req, State) ->
             {ok, Req3} = cowboy_req:reply(400, #{<<"content-type">> => <<"text/plain">>}, Reply, Req2),
             {ok, Req3, State};
         Values ->
-            % TODO: start cluster -> handle notification (fail / completion) from nodes (WS)
-            maps:get("gen_server", State) ! {create_erlang_task, Values},
-
-            % TODO: handle stop/re-start(?) requests from phoenix (WS)
-            Reply = <<"Done">>,
-            {ok, Req3} = cowboy_req:reply(201, #{<<"content-type">> => <<"text/plain">>}, Reply, Req2),
-            {ok, Req3, State}
+            % TODO: handle notification (fail / completion) from nodes (WS)
+            case gen_server:call({cowboy_listener, node()},{create_erlang_task, Values}) of
+                {error, ErrorMessage}->
+                    Reply = ErrorMessage,
+                    {ok, Req3} = cowboy_req:reply(400, #{<<"content-type">> => <<"text/plain">>}, Reply, Req2),
+                    {ok, Req3, State};
+                done ->
+                % TODO: handle stop/re-start(?) requests from phoenix (WS)
+                    Reply = <<"Done">>,
+                    {ok, Req3} = cowboy_req:reply(201, #{<<"content-type">> => <<"text/plain">>}, Reply, Req2),
+                    {ok, Req3, State}
+            end   
     end.
 
 handle_not_found(Req, State) ->
