@@ -3,7 +3,8 @@
 -include_lib("stdlib/include/qlc.hrl").
 -export([create_tables/0, initialize_schema/1, insert_partial_result/3, 
     get_input_split_by_id/1, get_partial_results_by_id/1,create_task/3,
-    add_node/1, remove_task/1, get_task_code_by_id/1]).
+    add_node/1, remove_task/1, get_task_code_by_id/1, update_task_status/2,
+    get_task_by_id/1]).
 
 %% SETUP
 %% TODO: add a section for replica setup
@@ -29,17 +30,6 @@ add_node(Node) ->
     mnesia:change_config(extra_db_nodes,[Node]).
 
 %% UTILITIES
-%% Create an input split
-insert_input_split(TaskId, SplitNumber, [CurrentSplit|Others]) ->
-    Fun = fun() ->
-        mnesia:write(#input_split{
-            id = TaskId ++ "-" ++ integer_to_list(SplitNumber), 
-            task_id = TaskId,
-            data = CurrentSplit})
-    end,
-    mnesia:transaction(Fun),
-    insert_input_split(TaskId, SplitNumber + 1, Others);
-insert_input_split(_, _, []) -> ok.
 
 %% Create a partial result
 insert_partial_result(PartialResultId,TaskId, Data)->
@@ -72,18 +62,56 @@ get_task_code_by_id(TaskId)->
     Fun = fun()->
         mnesia:read(task, TaskId)
         end,
-    {_, [{_,_,TaskModule}|_Rest]}= mnesia:transaction(Fun),
+    {_, [{_,_,TaskModule,_,_}|_Rest]}= mnesia:transaction(Fun),
     TaskModule.
+
+get_task_by_id(TaskId)->
+    Fun = fun()->
+        mnesia:read(task, TaskId)
+        end,
+    {_, [Task|_Rest]}= mnesia:transaction(Fun),
+    Task.
+
+%% util for input split IDs
+create_input_split_ids(_, 0, SplitIds)->
+    SplitIds;
+create_input_split_ids(TaskId,SplitNumber, SplitIds)->
+    CurrentSplitId = TaskId ++ "-" ++ integer_to_list(SplitNumber),
+    create_input_split_ids(TaskId, SplitNumber - 1, [CurrentSplitId | SplitIds]).
+
+%% Create an input split
+insert_input_split(_, [], _) -> ok;
+insert_input_split(TaskId, [CurrentSplit|Others], [CurrentInputSplitId|InputSplitIds]) ->
+    Fun = fun() ->
+        mnesia:write(#input_split{
+            id = CurrentInputSplitId, 
+            task_id = TaskId,
+            data = CurrentSplit})
+    end,
+    mnesia:transaction(Fun),
+    insert_input_split(TaskId, Others,InputSplitIds).
+
 %% Create a new task
 create_task(TaskId, TaskModule, InputSplits) ->
+    InputSplitIds = create_input_split_ids(TaskId, length(InputSplits),[]),
     Task = #task{
             id = TaskId,
-            task_module = TaskModule
+            task_module = TaskModule,
+            status = ready,
+            final_result= nil
         },
     Fun = fun() ->
                 mnesia:write(Task),
-                insert_input_split(TaskId, 0, InputSplits)
+                insert_input_split(TaskId, InputSplits, InputSplitIds)
           end,
+    mnesia:transaction(Fun),
+    InputSplitIds.
+
+update_task_status(Value, TaskId) ->
+    Fun = fun() ->
+        [T] = mnesia:wread({task, TaskId}),
+        mnesia:write(T#task{status=Value})
+    end,
     mnesia:transaction(Fun).
 
 %%CLEANUP

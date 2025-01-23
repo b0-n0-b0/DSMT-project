@@ -1,7 +1,9 @@
 -record(task, {
     id,                     % Unique identifier for the partial result
-    task_module             % User provided module to be executed
-    % input_splits = []                  % Input for the module
+    task_module,            % User provided module to be executed
+    status,                 % ready, running, done
+    final_result            % the final result for the user
+    % input_splits = []     % Input for the module
 }).
 
 

@@ -20,19 +20,19 @@ handle_post(Req, State) ->
     case parse_body(Body, RequiredParams)of 
         {error, {missing_params, MissingParams}} ->
             Reply = <<"Missing params">>,
-            {ok, Req3} = cowboy_req:reply(400, #{<<"content-type">> => <<"text/plain">>}, Reply, Req2),
+            Req3 = cowboy_req:reply(400, #{<<"content-type">> => <<"text/plain">>}, Reply, Req2),
             {ok, Req3, State};
         Values ->
             % TODO: handle notification (fail / completion) from nodes (WS)
             case gen_server:call({cowboy_listener, node()},{create_erlang_task, Values}) of
                 {error, ErrorMessage}->
                     Reply = ErrorMessage,
-                    {ok, Req3} = cowboy_req:reply(400, #{<<"content-type">> => <<"text/plain">>}, Reply, Req2),
+                    Req3 = cowboy_req:reply(400, #{<<"content-type">> => <<"text/plain">>}, Reply, Req2),
                     {ok, Req3, State};
                 done ->
                 % TODO: handle stop/re-start(?) requests from phoenix (WS)
                     Reply = <<"Done">>,
-                    {ok, Req3} = cowboy_req:reply(201, #{<<"content-type">> => <<"text/plain">>}, Reply, Req2),
+                    Req3 = cowboy_req:reply(201, #{<<"content-type">> => <<"text/plain">>}, Reply, Req2),
                     {ok, Req3, State}
             end   
     end.

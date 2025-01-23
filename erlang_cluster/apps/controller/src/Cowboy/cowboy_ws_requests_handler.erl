@@ -7,6 +7,7 @@ init(Req, State) ->
     {cowboy_websocket, Req, State}.
 
 websocket_init([{stats_interval, SInterval}]) ->
+    register(list_to_atom("websocket_"++random_string:generate(20)), self()),
     ws_send(self(), SInterval),
     {ok, [{stats_interval, SInterval}]}.
 
@@ -15,9 +16,10 @@ websocket_handle(Data, State) ->
     {ok, State}.
 
 websocket_info({timeout, _Ref, Msg}, [{stats_interval, SInterval}]) ->
-    ws_send(self(), SInterval),
+    % ws_send(self(), SInterval),
     {reply, {text, Msg}, [{stats_interval, SInterval}]};
-websocket_info(_Info, State) ->
+websocket_info(Info, State) ->
+    io:format("~p~n",[Info]),
     {ok, State}.
 
 ws_send(Pid, SInterval) ->

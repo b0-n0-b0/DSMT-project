@@ -9,7 +9,6 @@
 
 <.table id="clusters" rows={@clusters} row_click={&JS.navigate(~p"/clusters/#{&1}")}>
   <:col :let={cluster} label="Name">{cluster.name}</:col>
-  <:col :let={cluster} label="Cluster cookie">{cluster.cluster_cookie}</:col>
   <:action :let={cluster}>
     <div class="sr-only">
       <.link navigate={~p"/clusters/#{cluster}"}>Show</.link>
