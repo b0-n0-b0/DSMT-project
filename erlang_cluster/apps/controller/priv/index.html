@@ -16,7 +16,8 @@
 
     <script>
       function updateStats(memuse) {
-        document.getElementById('otp').innerHTML = memuse.otp_release;
+        console.log(memuse.progress);
+        document.getElementById('otp').innerHTML = parseFloat(memuse.progress);
         document.getElementById('cowboy').innerHTML = memuse.cowboy_version;
         document.getElementById('time').innerHTML = memuse.system_time;
         document.getElementById('stm').innerHTML = memuse.system_total_memory;

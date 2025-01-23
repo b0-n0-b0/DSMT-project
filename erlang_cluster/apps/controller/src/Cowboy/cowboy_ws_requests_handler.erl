@@ -19,12 +19,16 @@ websocket_info({timeout, _Ref, Msg}, [{stats_interval, SInterval}]) ->
     % ws_send(self(), SInterval),
     {reply, {text, Msg}, [{stats_interval, SInterval}]};
 websocket_info(Info, State) ->
-    io:format("~p~n",[Info]),
-    {ok, State}.
+    io:format("~p~n",[list_to_binary(float_to_list(Info))]),
+    StateJson = jsone:encode( #{<<"progress">>=> list_to_binary(float_to_list(Info))}),
+    {reply, {text, StateJson}, State}.
 
 ws_send(Pid, SInterval) ->
+    Data = #{<<"progress">>=><<"0">>},
+    DataJson = jsone:encode(Data),
+    io:format("~p~n",[DataJson]),
     % Data_jsonb = jiffy:encode({Data ++ [{otp_release, list_to_integer(erlang:system_info(otp_release))}] ++ [{cowboy_version, list_to_binary(CowboyV)}] ++ [{system_time, erlang:system_time()}] ++ [{pid, list_to_binary(pid_to_list(self()))}]}),
-    erlang:start_timer(SInterval, Pid, "").
+    erlang:start_timer(SInterval, Pid, DataJson).
 
 
 terminate(_Reason, Req, _State) ->
