@@ -69,12 +69,10 @@ handle_call(start_erlang_task, _From, State) ->
 handle_call(_UnexpectedMessage, _From, State) ->
     {reply, {error, unsupported_request}, State}.
 
-%%TODO: handle error message
 %% Handle DOWN messages from monitored processes
 handle_info({'DOWN', Ref, process, _Pid, Reason}, State) ->
-    io:format("[Worker] -> Monitored process down."),
+    io:format("[Worker] -> Monitored process down.~n"),
     %% Remove the monitor from state
-    %% TODO: everytime a process ends we must communicate it to the elixir backend in order to provide live updates
     {_, ControllerNode} = application:get_env(controller_node),
     case Reason of
         normal ->

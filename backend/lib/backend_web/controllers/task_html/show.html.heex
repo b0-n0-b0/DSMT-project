@@ -16,8 +16,8 @@
   <% "created" -> %>
     <.start_task_form changeset={@changeset} action={~p"/tasks/#{@task}/start"} clusters={@clusters} task={@task} options={@clusters}/>
   <% "running" -> %>
-    TODO
+    <.task_progress/>
   <% "completed" -> %>
-    TODO
-<% end %>
-<.back navigate={~p"/tasks"}>Back to tasks</.back>
+  TODO
+  <% end %>
+  <.back navigate={~p"/tasks"}>Back to tasks</.back>

@@ -8,7 +8,7 @@ init(Req, State) ->
 
 websocket_init([{stats_interval, SInterval}]) ->
     register(list_to_atom("websocket_"++random_string:generate(20)), self()),
-    ws_send(self(), SInterval),
+    % ws_send(self(), SInterval),
     {ok, [{stats_interval, SInterval}]}.
 
 websocket_handle(Data, State) ->
@@ -24,6 +24,7 @@ websocket_info(Info, State) ->
     {reply, {text, StateJson}, State}.
 
 ws_send(Pid, SInterval) ->
+    % TODO: get actual state
     Data = #{<<"progress">>=><<"0">>},
     DataJson = jsone:encode(Data),
     io:format("~p~n",[DataJson]),

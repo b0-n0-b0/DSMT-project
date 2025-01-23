@@ -129,8 +129,8 @@ defmodule BackendWeb.TaskController do
       %{"Content-Type" => "application/x-www-form-urlencoded"}
     )
     IO.inspect(response)
-    # Tasks.update_task(task, %{"status" => "running"})
-    # Clusters.update_cluster(cluster, %{"task_id" => id})
+    Tasks.update_task(task, %{"status" => "running"})
+    Clusters.update_cluster(cluster, %{"task_id" => id})
     conn
     |> put_flash(:info, "Task started successfully.")
     |> redirect(to: ~p"/tasks/#{id}")

@@ -95,7 +95,6 @@ handle_call({create_erlang_task, [TaskId, TaskModule, Input, ProcessNumber]}, _F
             end
     end;
 handle_call({worker_communication, Message}, _From, State) ->
-    % TODO: updates from workers -> send update to ws_info via cowboy PID
     case Message of
         done ->
             CurrentlyWorkingNodes = maps:get("currently_running_processes", State) - 1,

@@ -1,0 +1,38 @@
+<br/><br/><p>Task progress</p><br/>
+<div class="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700">
+    <div id="progress-bar" class="bg-blue-600 h-2.5 rounded-full" style="width: 0%"></div>
+</div>
+<script>
+    function updateStats(msg) {
+      console.log(msg.progress);
+      document.getElementById('progress-bar').style = `width: ${parseFloat(msg.progress)}%`;
+    }
+
+    function connect() {
+      var host = window.document.location.host.replace(/:.*/, '');
+      var ws = new WebSocket('ws://' + host + ':1337/websocket');  // standalone config
+      //var ws = new WebSocket('wss://' + host + '/websocket');  // heroku config
+      ws.onopen = function () {
+        console.log("connected to websocket");
+        setInterval(function(){ var date = new Date(); ws.send(JSON.stringify({'keepalive':date.getTime()})); }, 30000);
+      };
+      ws.onmessage = function (event) {
+        updateStats(JSON.parse(event.data));
+      };
+      ws.onclose = function (event) {
+        console.log("websocket connection closed");
+        document.getElementById('wsclosed').style.display = "block"
+        switch (event.code){
+        case 1000:  // CLOSE_NORMAL
+          break;
+        default:
+          setTimeout(function() {
+            connect();
+          }, 1000);
+          break;
+        }
+      };
+    }
+
+    connect();
+  </script>

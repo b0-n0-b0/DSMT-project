@@ -13,17 +13,14 @@ init(Req, State) ->
     end.
 
 handle_post(Req, State) ->
-    % {ok, Body, Req2} = cowboy_req:read_body(Req),
     {ok, Body, Req2} = cowboy_req:read_urlencoded_body(Req),
     RequiredParams = [<<"TaskId">>, <<"ErlangModule">>, <<"Input">>,<<"ProcessNumber">>],
-    % io:format("~p~n",[Body]),
     case parse_body(Body, RequiredParams)of 
         {error, {missing_params, MissingParams}} ->
             Reply = <<"Missing params">>,
             Req3 = cowboy_req:reply(400, #{<<"content-type">> => <<"text/plain">>}, Reply, Req2),
             {ok, Req3, State};
         Values ->
-            % TODO: handle notification (fail / completion) from nodes (WS)
             case gen_server:call({cowboy_listener, node()},{create_erlang_task, Values}) of
                 {error, ErrorMessage}->
                     Reply = ErrorMessage,
