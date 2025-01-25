@@ -21,7 +21,7 @@ routes() ->
         {"/start_cluster", cowboy_http_requests_handler, #{"gen_server" => self()}},
         {"/", cowboy_static, {priv_file, controller, "index.html"}},
         % WS: monitoring / control cluster work
-        {"/websocket", cowboy_ws_requests_handler, [{stats_interval, list_to_integer("50")}]}
+        {"/websocket", cowboy_ws_requests_handler, []}
     ],
     {Routes}.
 
@@ -45,6 +45,7 @@ init(_) ->
         "total_process_number" => null
     }}.
 
+% add a node to the cluster
 handle_call({add_node_to_mnesia_cluster, MnesiaNode}, _From, State) ->
     io:format("[ClusterController] -> Adding node ~p to Mnesia cluster~n", [MnesiaNode]),
     mnesia_utils:add_node(MnesiaNode),
@@ -52,8 +53,8 @@ handle_call({add_node_to_mnesia_cluster, MnesiaNode}, _From, State) ->
         "available_nodes", [MnesiaNode | maps:get("available_nodes", State)], State
     ),
     {reply, done, NewState};
+% create and start cluster task
 handle_call({create_erlang_task, [TaskId, TaskModule, Input, ProcessNumber]}, _From, State) ->
-    % io:format("~p~n~p~n~p~n",[binary_to_list(TaskId),binary_to_list(TaskModule),binary_to_list(InputSplits)]),
     io:format("[ClusterController] -> erlang task creation~n"),
     AvailableWorkers = work_dispatch_utils:get_available_nodes_list(
         maps:get("available_nodes", State), []
@@ -83,7 +84,7 @@ handle_call({create_erlang_task, [TaskId, TaskModule, Input, ProcessNumber]}, _F
                 ok ->
                     work_dispatch_utils:start_worker_nodes(Nodes),
                     io:format("[ClusterController] -> Work dispached~n"),
-                    mnesia_utils:update_task_status(running, binary_to_list(TaskId)),
+                    mnesia_utils:update_task_status("running", binary_to_list(TaskId)),
                     NewState1 = maps:put(
                         "currently_running_processes", WorkerNumber * ProcessNumberInteger, State
                     ),
@@ -94,29 +95,40 @@ handle_call({create_erlang_task, [TaskId, TaskModule, Input, ProcessNumber]}, _F
                     {reply, done, NewState}
             end
     end;
+% handle status messages from the workers
 handle_call({worker_communication, Message}, _From, State) ->
     case Message of
         done ->
             CurrentlyWorkingNodes = maps:get("currently_running_processes", State) - 1,
             case CurrentlyWorkingNodes of
                 0 ->
-                    io:format("[ClusterController] -> Work done"),
-                    mnesia_utils:update_task_status(done, maps:get("current_task", State));
+                    io:format("[ClusterController] -> Work done~n"),
+                    mnesia_utils:update_task_status("done", maps:get("current_task", State)),
+                    work_dispatch_utils:send_updates_to_ws({info, 100.0}, registered());
                 _ ->
                     Total = maps:get("total_process_number", State),
                     Progress = ((Total - CurrentlyWorkingNodes) / Total) * 100,
-                    work_dispatch_utils:send_updates_to_ws(Progress, registered()),
-                    io:format("[ClusterController] -> Progress: ~p~n", [Progress]),
+                    work_dispatch_utils:send_updates_to_ws({info, Progress}, registered()),
                     ok
             end;
         % TODO: handle errors
         {error, ErrorMessage} ->
-            io:format("~p~n", [ErrorMessage])
+            mnesia_utils:update_task_status("failed", maps:get("current_task", State)),
+            work_dispatch_utils:send_updates_to_ws({info, {error, ErrorMessage}}, registered())
     end,
     NewState = maps:put(
         "currently_running_processes", maps:get("currently_running_processes", State) - 1, State
     ),
     {reply, ok, NewState};
+handle_call({ws_request, get_status}, _From, State) ->
+    CurrentTask = maps:get("current_task", State),
+    case CurrentTask of
+        null ->
+            {reply, "no_task", State};
+        _ ->
+            {_, _, _, Status, _} = mnesia_utils:get_task_by_id(maps:get("current_task", State)),
+            {reply, Status, State}
+    end;
 % Catch-all clause for unrecognized messages
 handle_call(_, _, State) ->
     io:format("[ClusterController] -> received unexpected request"),

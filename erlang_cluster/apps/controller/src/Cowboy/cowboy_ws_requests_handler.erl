@@ -1,35 +1,37 @@
 -module(cowboy_ws_requests_handler).
--export([init/2, websocket_init/1, websocket_handle/2, websocket_info/2, terminate/3, ws_send/2]).
+-export([init/2, websocket_init/1, websocket_handle/2, websocket_info/2, terminate/3]).
 
 
 init(Req, State) ->
-    io:format("[ClusterController] -> websocket connection initiated~n~p~n~nstate: ~p~n", [Req, State]),
+    io:format("[ClusterController] -> websocket connection initiated~n"),
     {cowboy_websocket, Req, State}.
 
-websocket_init([{stats_interval, SInterval}]) ->
+websocket_init(State) ->
     register(list_to_atom("websocket_"++random_string:generate(20)), self()),
-    % ws_send(self(), SInterval),
-    {ok, [{stats_interval, SInterval}]}.
+    self() ! send_status,
+    {ok, State}.
 
 websocket_handle(Data, State) ->
     io:format("[ClusterController] -> websocket data from client: ~p~n", [Data]),
     {ok, State}.
 
-websocket_info({timeout, _Ref, Msg}, [{stats_interval, SInterval}]) ->
-    % ws_send(self(), SInterval),
-    {reply, {text, Msg}, [{stats_interval, SInterval}]};
-websocket_info(Info, State) ->
-    io:format("~p~n",[list_to_binary(float_to_list(Info))]),
-    StateJson = jsone:encode( #{<<"progress">>=> list_to_binary(float_to_list(Info))}),
-    {reply, {text, StateJson}, State}.
-
-ws_send(Pid, SInterval) ->
-    % TODO: get actual state
-    Data = #{<<"progress">>=><<"0">>},
-    DataJson = jsone:encode(Data),
-    io:format("~p~n",[DataJson]),
-    % Data_jsonb = jiffy:encode({Data ++ [{otp_release, list_to_integer(erlang:system_info(otp_release))}] ++ [{cowboy_version, list_to_binary(CowboyV)}] ++ [{system_time, erlang:system_time()}] ++ [{pid, list_to_binary(pid_to_list(self()))}]}),
-    erlang:start_timer(SInterval, Pid, DataJson).
+websocket_info(send_status, State) ->
+    Status = gen_server:call({cowboy_listener, node()}, {ws_request, get_status}),
+    StateJson = jsone:encode( #{<<"status">>=> list_to_binary(Status)}),
+    {reply, {text, StateJson}, State};
+% Send data on ws when worker sends update
+websocket_info({info, Info}, State) ->
+    case Info of
+        % TODO: error arrives before connection and gets discarded, save in state or remove?
+        {error, ErrorMessage}->
+            Status = gen_server:call({cowboy_listener, node()}, {ws_request, get_status}),
+            StateJson = jsone:encode( #{<<"status">>=> list_to_binary(Status), <<"errorMessage">> => list_to_binary(ErrorMessage)}),
+            {reply, {text, StateJson}, State};
+        _ ->
+            Status = gen_server:call({cowboy_listener, node()}, {ws_request, get_status}),
+            StateJson = jsone:encode( #{<<"status">>=> list_to_binary(Status), <<"progress">>=> list_to_binary(float_to_list(Info))}),
+            {reply, {text, StateJson}, State}
+    end.
 
 
 terminate(_Reason, Req, _State) ->

@@ -24,13 +24,6 @@ start_link() ->
 init(_Args) ->
     {ok, #state{}}.
 
-% Ping
-handle_call(ping, From, State) ->
-    % TO SEND MORE STUFF
-    % {FromPid, _Tag} = _From,
-    % FromPid ! {other_info},
-    io:format("[Worker] -> received ping from ~p~n", [From]),
-    {reply, pong, State};
 % Compile received module
 handle_call({setup_erlang_task, TaskId, InputSplitId, ProcessNumber}, _From, State) ->
     io:format("[Worker] -> erlang task setup~n"),
@@ -77,7 +70,8 @@ handle_info({'DOWN', Ref, process, _Pid, Reason}, State) ->
     case Reason of
         normal ->
             gen_server:call({cowboy_listener, ControllerNode}, {worker_communication, done});
-        _ ->
+        _ -> 
+            % TODO: stop every other process working
             gen_server:call(
                 {cowboy_listener, ControllerNode},
                 {worker_communication, {error, "Task crashed, please re-check the provided module"}}

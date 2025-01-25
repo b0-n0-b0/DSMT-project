@@ -60,6 +60,7 @@ defmodule BackendWeb.Router do
     pipe_through [:browser, :require_authenticated_user]
     resources "/tasks", TaskController
     post "/tasks/:id/start", TaskController, :start_task
+    post "/tasks/:id/update_status", TaskController, :change_status
     resources "/clusters", ClusterController
   end
 

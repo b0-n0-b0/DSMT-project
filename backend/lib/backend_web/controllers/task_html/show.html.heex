@@ -13,11 +13,13 @@
 </.list>
 
 <%= case @task.status do %>
-  <% "created" -> %>
+  <% "ready" -> %>
     <.start_task_form changeset={@changeset} action={~p"/tasks/#{@task}/start"} clusters={@clusters} task={@task} options={@clusters}/>
   <% "running" -> %>
-    <.task_progress/>
-  <% "completed" -> %>
-  TODO
+    <.task_progress task={@task} csrf={get_csrf_token()}/>
+  <% "done" -> %>
+    DONE
+  <% "failed" -> %>
+    FAILED
   <% end %>
   <.back navigate={~p"/tasks"}>Back to tasks</.back>

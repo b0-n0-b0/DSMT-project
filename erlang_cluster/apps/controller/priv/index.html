@@ -19,6 +19,7 @@
         console.log(memuse.progress);
         document.getElementById('progress').innerHTML = parseFloat(memuse.progress);
       }
+      setInterval(function(){ var date = new Date(); ws.send(JSON.stringify({'keepalive':date.getTime()})); }, 30000);
 
       function connect() {
         var host = window.document.location.host.replace(/:.*/, '');

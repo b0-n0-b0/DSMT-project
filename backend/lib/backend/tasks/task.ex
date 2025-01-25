@@ -7,7 +7,7 @@ defmodule Backend.Tasks.Task do
     field :title, :string
     field :erlang_model, :string
     field :user_id, :id
-    field :status, :string
+    field :status, :string #status can be: ready, running, done, failed
 
     timestamps(type: :utc_datetime)
   end

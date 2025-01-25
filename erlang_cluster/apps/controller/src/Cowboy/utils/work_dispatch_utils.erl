@@ -34,6 +34,8 @@ get_available_nodes_list([Node | Nodes], AvailableNodes) ->
         pang ->
             get_available_nodes_list(Nodes, [AvailableNodes])
     end.
+
+
 send_updates_to_ws(_, []) ->
     ok;
 send_updates_to_ws(Update, [Current | RegisteredPids]) ->
