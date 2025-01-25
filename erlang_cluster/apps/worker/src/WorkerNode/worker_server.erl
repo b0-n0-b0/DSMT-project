@@ -63,26 +63,42 @@ handle_call(_UnexpectedMessage, _From, State) ->
     {reply, {error, unsupported_request}, State}.
 
 %% Handle DOWN messages from monitored processes
-handle_info({'DOWN', Ref, process, _Pid, Reason}, State) ->
+handle_info({'DOWN', _Ref, process, Pid, Reason}, State) ->
     io:format("[Worker] -> Monitored process down.~n"),
     %% Remove the monitor from state
+    WorkerPids = maps:keys(State#state.monitors),
     {_, ControllerNode} = application:get_env(controller_node),
-    case Reason of
-        normal ->
-            gen_server:call({cowboy_listener, ControllerNode}, {worker_communication, done});
-        _ -> 
-            % TODO: stop every other process working
-            gen_server:call(
-                {cowboy_listener, ControllerNode},
-                {worker_communication, {error, "Task crashed, please re-check the provided module"}}
-            )
-    end,
-    {noreply, #state{
-        monitors = maps:remove(Ref, State#state.monitors),
-        task_id = State#state.task_id,
-        input_split_id = State#state.input_split_id,
-        processes_number = State#state.processes_number
-    }};
+    case lists:member(Pid, WorkerPids) of
+        true ->
+            case Reason of
+                normal ->
+                    gen_server:call(
+                        {cowboy_listener, ControllerNode}, {worker_communication, done}
+                    ),
+                    {noreply, #state{
+                        monitors = maps:remove(Pid, State#state.monitors),
+                        task_id = State#state.task_id,
+                        input_split_id = State#state.input_split_id,
+                        processes_number = State#state.processes_number
+                    }};
+                _ ->
+                    % TODO: stop every other process working
+                    task_utils:kill_workers(WorkerPids),
+                    gen_server:call(
+                        {cowboy_listener, ControllerNode},
+                        {worker_communication,
+                            {error, "Task crashed, please re-check the provided module"}}
+                    ),
+                    {noreply, #state{
+                        monitors = #{},
+                        task_id = State#state.task_id,
+                        input_split_id = State#state.input_split_id,
+                        processes_number = State#state.processes_number
+                    }}
+            end;
+        _ ->
+            {noreply, State}
+    end;
 %% Catch-all for other messages
 handle_info(Other, State) ->
     io:format("[Worker] -> Received unexpected message: ~p~n", [Other]),

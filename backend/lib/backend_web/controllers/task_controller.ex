@@ -47,18 +47,20 @@ defmodule BackendWeb.TaskController do
   end
 
   # END PLUG
-# show all tasks
+  # show all tasks
   def index(conn, _params) do
     current_user = conn.assigns.current_user
     tasks = Tasks.list_tasks(current_user.id)
     render(conn, :index, tasks: tasks)
   end
-# GET create task
+
+  # GET create task
   def new(conn, _params) do
     changeset = Tasks.change_task(%Task{})
     render(conn, :new, changeset: changeset)
   end
-# POST create task
+
+  # POST create task
   def create(conn, %{"task" => task_params}) do
     content = File.read!(task_params["erlang_model"].path)
 
@@ -80,6 +82,7 @@ defmodule BackendWeb.TaskController do
         render(conn, :new, changeset: changeset)
     end
   end
+
   # show task
   def show(conn, %{"id" => id}) do
     task = Tasks.get_task!(id, conn.assigns.current_user.id)
@@ -92,14 +95,27 @@ defmodule BackendWeb.TaskController do
       end)
 
     changeset = %{}
+
+    conn =
+      case task.status do
+        "failed" ->
+          conn
+          |> put_flash(:error, "The task failed, please check your Erlang module")
+
+        _ ->
+          conn
+      end
+
     render(conn, :show, task: task, clusters: clusters, changeset: changeset)
   end
+
   # get update task
   def edit(conn, %{"id" => id}) do
     task = Tasks.get_task!(id, conn.assigns.current_user.id)
     changeset = Tasks.change_task(task)
     render(conn, :edit, task: task, changeset: changeset)
   end
+
   # start task
   def start_task(conn, %{
         "id" => id,
@@ -113,8 +129,8 @@ defmodule BackendWeb.TaskController do
     input = File.read!(input_file.path)
     HTTPoison.start()
 
+    # TODO: change TaskId
     req_body =
-      # TODO: change TaskId
       URI.encode_query(%{
         "TaskId" => "random_task",
         "ErlangModule" => task.erlang_model,
@@ -122,15 +138,18 @@ defmodule BackendWeb.TaskController do
         "ProcessNumber" => processes
       })
 
-    response = HTTPoison.post(
-      "#{cluster.cluster_controller_url}/start_cluster",
-      req_body,
-      %{"Content-Type" => "application/x-www-form-urlencoded"}
-    )
+    response =
+      HTTPoison.post(
+        "#{cluster.cluster_controller_url}/start_cluster",
+        req_body,
+        %{"Content-Type" => "application/x-www-form-urlencoded"}
+      )
+
     # TODO: check for errors in response
     IO.inspect(response)
     Tasks.update_task(task, %{"status" => "running"})
     Clusters.update_cluster(cluster, %{"task_id" => id})
+
     conn
     |> put_flash(:info, "Task started successfully.")
     |> redirect(to: ~p"/tasks/#{id}")
@@ -141,15 +160,15 @@ defmodule BackendWeb.TaskController do
     valid_status = ["failed", "done"]
     task = Tasks.get_task!(id, conn.assigns.current_user.id)
     is_in_list = Enum.member?(valid_status, status)
+
     if is_in_list do
-      IO.inspect(status)
       Tasks.update_task(task, %{"status" => status})
+
       conn
-      |> send_resp(201,"")
+      |> send_resp(201, "")
     else
       conn
-      |> put_flash(:info, "Task status does not exist")
-      |> redirect(to: ~p"/tasks/#{task}")
+      |> send_resp(400,"")
     end
   end
 

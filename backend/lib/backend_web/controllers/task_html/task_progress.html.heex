@@ -9,7 +9,7 @@
       document.getElementById('progress-bar').style = `width: ${parseFloat(msg.progress)}%`;
     }
     // TODO: if completed or failed, handle message
-    if (msg.status === "done") {
+    if (msg.status === "done" || msg.status === "failed") {
       console.log(msg.status)
       await fetch('<%= ~p"/tasks/#{@task}/update_status" %>', {
         method: "POST",
@@ -18,16 +18,13 @@
           'x-csrf-token': '<%= @csrf %>'
         },
         body: new URLSearchParams({
-          'status': 'done'
+          'status': msg.status
         })
       }).then(response => {
         if (response.status === 201) {
           location.reload();
         }
       })
-
-    } else if (msg.status === "failed") {
-      console.log(msg.errorMessage)
 
     }
   }
