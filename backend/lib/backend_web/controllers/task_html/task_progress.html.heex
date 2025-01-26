@@ -8,7 +8,6 @@
     if (msg.progress) {
       document.getElementById('progress-bar').style = `width: ${parseFloat(msg.progress)}%`;
     }
-    // TODO: if completed or failed, handle message
     if (msg.status === "done" || msg.status === "failed") {
       console.log(msg.status)
       await fetch('<%= ~p"/tasks/#{@task}/update_status" %>', {

@@ -104,6 +104,8 @@ handle_call({worker_communication, Message}, _From, State) ->
                 0 ->
                     io:format("[ClusterController] -> Work done~n"),
                     mnesia_utils:update_task_status("done", maps:get("current_task", State)),
+                    AllPartialResults = mnesia_utils:get_partial_results_by_taskid(maps:get("current_task",State)),
+                    io:format("_____________________~n~p~n____________________~n", [AllPartialResults]),
                     work_dispatch_utils:send_updates_to_ws({info, 100.0}, registered());
                 _ ->
                     Total = maps:get("total_process_number", State),

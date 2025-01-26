@@ -58,6 +58,11 @@ handle_call(start_erlang_task, _From, State) ->
         input_split_id = State#state.input_split_id,
         processes_number = State#state.processes_number
     }};
+
+handle_call(aggreagate_partial_results, _From, State) ->
+    % TODO: get all partial results, execute the aggregate/1 function, put the final result in mnesia
+    io:format("[Worker] -> starting erlang task~n");
+
 % Catch-all clause for unrecognized messages
 handle_call(_UnexpectedMessage, _From, State) ->
     {reply, {error, unsupported_request}, State}.
