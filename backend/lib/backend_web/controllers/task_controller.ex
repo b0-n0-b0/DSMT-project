@@ -138,21 +138,31 @@ defmodule BackendWeb.TaskController do
         "ProcessNumber" => processes
       })
 
-    response =
-      HTTPoison.post(
-        "#{cluster.cluster_controller_url}/start_cluster",
-        req_body,
-        %{"Content-Type" => "application/x-www-form-urlencoded"}
-      )
+    case HTTPoison.post(
+           "#{cluster.cluster_controller_url}/start_cluster",
+           req_body,
+           %{"Content-Type" => "application/x-www-form-urlencoded"}
+         ) do
+      {:ok, %{status_code: 400, body: body}} ->
+        IO.puts("Error 400: #{body}")
 
-    # TODO: check for errors in response
-    IO.inspect(response)
-    Tasks.update_task(task, %{"status" => "running"})
-    Clusters.update_cluster(cluster, %{"task_id" => id})
+        conn
+        |> put_flash(:error, body)
+        |> redirect(to: ~p"/tasks/#{id}")
 
-    conn
-    |> put_flash(:info, "Task started successfully.")
-    |> redirect(to: ~p"/tasks/#{id}")
+      {:ok, %HTTPoison.Response{status_code: 201}} ->
+        Tasks.update_task(task, %{"status" => "running"})
+        Clusters.update_cluster(cluster, %{"task_id" => id})
+
+        conn
+        |> put_flash(:info, "Task started successfully.")
+        |> redirect(to: ~p"/tasks/#{id}")
+
+      {:error, _} ->
+        conn
+        |> put_flash(:error, "Something went wrong.")
+        |> redirect(to: ~p"/tasks/#{id}")
+    end
   end
 
   # Update status of the task
@@ -168,7 +178,7 @@ defmodule BackendWeb.TaskController do
       |> send_resp(201, "")
     else
       conn
-      |> send_resp(400,"")
+      |> send_resp(400, "")
     end
   end
 
