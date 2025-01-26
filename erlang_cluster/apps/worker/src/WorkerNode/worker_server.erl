@@ -46,9 +46,9 @@ handle_call({setup_erlang_task, TaskId, InputSplitId, ProcessNumber}, _From, Sta
 handle_call(start_erlang_task, _From, State) ->
     io:format("[Worker] -> starting erlang task~n"),
     InputSplit = mnesia_utils:get_input_split_by_id(State#state.input_split_id),
-    % {Pid, Ref} = spawn_monitor(fun() -> task_utils:execute_erlang_task(InputSplit, State#state.task_id) end),
+    ProcessSplits = task_utils:split_input_per_process(InputSplit, State#state.processes_number),
     SpawnedProcesses = task_utils:spawn_workers(
-        State#state.processes_number, [], InputSplit, State#state.task_id
+        State#state.processes_number, [], ProcessSplits, State#state.task_id
     ),
     io:format("[Worker] -> all workers spawned~n"),
     task_utils:start_workers(SpawnedProcesses),
@@ -65,12 +65,12 @@ handle_call(_UnexpectedMessage, _From, State) ->
 %% Handle DOWN messages from monitored processes
 handle_info({'DOWN', _Ref, process, Pid, Reason}, State) ->
     io:format("[Worker] -> Monitored process down.~n"),
-    %% Remove the monitor from state
     WorkerPids = maps:keys(State#state.monitors),
     {_, ControllerNode} = application:get_env(controller_node),
     case lists:member(Pid, WorkerPids) of
         true ->
             case Reason of
+                % the worker has finished the "map" job
                 normal ->
                     gen_server:call(
                         {cowboy_listener, ControllerNode}, {worker_communication, done}
@@ -81,8 +81,8 @@ handle_info({'DOWN', _Ref, process, Pid, Reason}, State) ->
                         input_split_id = State#state.input_split_id,
                         processes_number = State#state.processes_number
                     }};
+                % something went wrong
                 _ ->
-                    % TODO: stop every other process working
                     task_utils:kill_workers(WorkerPids),
                     gen_server:call(
                         {cowboy_listener, ControllerNode},

@@ -1,13 +1,20 @@
 -module(task_utils).
 -export([
-    setup_erlang_task/1, execute_erlang_task/2, spawn_workers/4, start_workers/1, kill_workers/1
+    setup_erlang_task/1,
+    execute_erlang_task/2,
+    spawn_workers/4,
+    start_workers/1,
+    kill_workers/1,
+    split_input_per_process/2
 ]).
 
-spawn_workers(0, SpawnedProcesses, _InputSplit, _TaskId) ->
+spawn_workers(_, SpawnedProcesses, [], _) ->
     maps:from_list(SpawnedProcesses);
-spawn_workers(ProcessesNumber, SpawnedProcesses, InputSplit, TaskId) ->
-    Process = spawn_monitor(fun() -> task_utils:execute_erlang_task(InputSplit, TaskId) end),
-    spawn_workers(ProcessesNumber - 1, [Process | SpawnedProcesses], InputSplit, TaskId).
+spawn_workers(0, SpawnedProcesses, _, _) ->
+    maps:from_list(SpawnedProcesses);
+spawn_workers(ProcessesNumber, SpawnedProcesses, [CurrentProcessSplit | Splits], TaskId) ->
+    Process = spawn_monitor(fun() -> task_utils:execute_erlang_task(CurrentProcessSplit, TaskId) end),
+    spawn_workers(ProcessesNumber - 1, [Process | SpawnedProcesses], Splits, TaskId).
 
 start_workers(Workers) ->
     maps:foreach(
@@ -47,6 +54,26 @@ execute_erlang_task(InputSplit, TaskId) ->
 kill_workers([]) ->
     ok;
 kill_workers([Worker | Workers]) ->
-    io:format("[Worker] -> killing process ~p~n",[Worker]),
+    io:format("[Worker] -> killing process ~p~n", [Worker]),
     exit(Worker, killed),
     kill_workers(Workers).
+
+split_input_per_process(List, 0, Splits, SplitNumber) ->
+    split_input_per_process(List, 1, Splits, SplitNumber);
+split_input_per_process(List, _, Splits, 1) ->
+    case List of
+        [] ->
+            Splits;
+        _ ->
+        [List | Splits]
+    end;
+split_input_per_process([], _, Splits, _) ->
+    Splits;
+split_input_per_process(List, SplitSize, Splits, SplitNumber) ->
+    {CurrentSplit, NewList} = lists:split(SplitSize, List),
+    split_input_per_process(NewList, SplitSize, [CurrentSplit | Splits], SplitNumber - 1).
+split_input_per_process(List, HowManySplits) ->
+    Length = length(List),
+    SplitSize = Length div HowManySplits,
+    Splits = split_input_per_process(List, SplitSize, [], HowManySplits),
+    Splits.

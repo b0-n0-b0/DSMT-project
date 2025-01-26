@@ -19,10 +19,10 @@ websocket_info(send_status, State) ->
     Status = gen_server:call({cowboy_listener, node()}, {ws_request, get_status}),
     StateJson = jsone:encode( #{<<"status">>=> list_to_binary(Status)}),
     {reply, {text, StateJson}, State};
+
 % Send data on ws when worker sends update
 websocket_info({info, Info}, State) ->
     case Info of
-        % TODO: error arrives before connection and gets discarded, save in state or remove?
         {error, ErrorMessage}->
             Status = gen_server:call({cowboy_listener, node()}, {ws_request, get_status}),
             StateJson = jsone:encode( #{<<"status">>=> list_to_binary(Status), <<"errorMessage">> => list_to_binary(ErrorMessage)}),

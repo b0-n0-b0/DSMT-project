@@ -38,7 +38,7 @@ handle_not_found(Req, State) ->
     {ok, Req2} = cowboy_req:reply(404, #{<<"content-type">> => <<"text/plain">>}, <<"Not Found">>, Req),
     {ok, Req2, State}.
  
-%Function to check parameters and call another function
+%parse POST request body
 parse_body(Params, RequiredParams) ->
     % Check if all required parameters are present
     case check_required_params(Params, RequiredParams) of
