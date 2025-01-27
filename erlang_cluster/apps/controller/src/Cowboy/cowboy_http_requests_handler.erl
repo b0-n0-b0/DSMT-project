@@ -14,27 +14,14 @@ init(Req, State) ->
                     start_cluster(Req, State);
                 _ ->
                     handle_not_found(Req, State)
-            end;
-        <<"/get_final_result">> ->
-            case Method of
-                <<"GET">> ->
-                    get_final_result(Req, State);
-                _ ->
-                    handle_not_found(Req, State)
             end
     end.
-
-get_final_result(Req, State)->
-    Reply = gen_server:call({cowboy_listener, node()},get_final_result),
-    Reply1 = lists:flatten(io_lib:format("~p",[Reply])),
-    Req1 = cowboy_req:reply(200, #{<<"content-type">> => <<"text/plain">>}, Reply1, Req),
-    {ok, Req1, State}.
 
 start_cluster(Req, State) ->
     {ok, Body, Req2} = cowboy_req:read_urlencoded_body(Req),
     RequiredParams = [<<"TaskId">>, <<"ErlangModule">>, <<"Input">>,<<"ProcessNumber">>],
     case parse_body(Body, RequiredParams)of 
-        {error, {missing_params, MissingParams}} ->
+        {error, {missing_params, _MissingParams}} ->
             Reply = <<"Missing params">>,
             Req3 = cowboy_req:reply(400, #{<<"content-type">> => <<"text/plain">>}, Reply, Req2),
             {ok, Req3, State};

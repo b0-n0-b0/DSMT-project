@@ -11,7 +11,7 @@
         ws.onmessage = function (event) {
             msg = JSON.parse(event.data)
             if (msg.status === "done"){
-                ws.send("get_final_result")
+                ws.send(JSON.stringify({"command":"get_final_result", "task_id":"<%= @task.id %>"}))
             }
             // received final result
             if(msg.final_result){

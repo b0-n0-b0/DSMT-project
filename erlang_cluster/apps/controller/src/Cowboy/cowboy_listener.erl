@@ -17,10 +17,8 @@ start_link() ->
 routes() ->
     Routes = [
         % {OfferEndpoint, socket_listener, []}
-        % HTTP: start cluster stuff
+        % HTTP: start cluster
         {"/start_cluster", cowboy_http_requests_handler, #{"gen_server" => self()}},
-        {"/get_final_result", cowboy_http_requests_handler, #{"gen_server" => self()}},
-        {"/", cowboy_static, {priv_file, controller, "index.html"}},
         % WS: monitoring / control cluster work
         {"/websocket", cowboy_ws_requests_handler, []}
     ],
@@ -105,15 +103,9 @@ handle_call({ws_request, get_status}, _From, State) ->
             {reply, Status, State}
     end;
 
-handle_call(get_final_result, _From, State) ->
-    CurrentTask = maps:get("current_task", State),
-    case CurrentTask of
-        null ->
-            {reply, "no_task", State};
-        _ ->
-            {_, _, _, _, FinalResult} = mnesia_utils:get_task_by_id(maps:get("current_task", State)),
-            {reply, FinalResult, State}
-    end;
+handle_call({get_final_result, TaskId}, _From, State) ->
+    {_, _, _, _, FinalResult} = mnesia_utils:get_task_by_id(TaskId),
+    {reply, FinalResult, State};
 % Catch-all clause for unrecognized messages
 handle_call(_, _, State) ->
     io:format("[ClusterController] -> received unexpected request"),
