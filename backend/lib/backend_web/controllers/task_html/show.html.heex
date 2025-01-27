@@ -10,15 +10,19 @@
 <.list>
   <:item title="Description">{@task.description}</:item>
   <:item title="Erlang model">{@task.erlang_model}</:item>
+  <:item title="Final Result"><div id="final_result"></div></:item>
 </.list>
 
 <%= case @task.status do %>
+<% "ready" -> %>
+<.start_task_form changeset={@changeset} action={~p"/tasks/#{@task}/start"} clusters={@clusters} task={@task} options={@clusters}/>
+<% "failed" -> %>
+<.start_task_form changeset={@changeset} action={~p"/tasks/#{@task}/start"} clusters={@clusters} task={@task} options={@clusters}/>
 <% "running" -> %>
 <.task_progress task={@task} csrf={get_csrf_token()}/>
 <% "done" -> %>
-DONE
+<.task_completed task={@task} csrf={get_csrf_token()}/>
 <% _ -> %>
 
 <% end %>
-<.start_task_form changeset={@changeset} action={~p"/tasks/#{@task}/start"} clusters={@clusters} task={@task} options={@clusters}/>
 <.back navigate={~p"/tasks"}>Back to tasks</.back>

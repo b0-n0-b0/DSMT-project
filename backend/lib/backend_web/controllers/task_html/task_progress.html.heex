@@ -4,12 +4,13 @@
   <div id="progress-bar" class="bg-blue-600 h-2.5 rounded-full" style="width: 0%"></div>
 </div>
 <script>
-  async function updateStats(msg) {
+  async function updateStats(msg, ws) {
+    // Send message to retrieve result (onclick or automatically?)
+
     if (msg.progress) {
       document.getElementById('progress-bar').style = `width: ${parseFloat(msg.progress)}%`;
     }
     if (msg.status === "done" || msg.status === "failed") {
-      // TODO: fetch the result and save it
       await fetch('<%= ~p"/tasks/#{@task}/update_status" %>', {
         method: "POST",
         headers: {
@@ -37,7 +38,7 @@
     };
 
     ws.onmessage = function (event) {
-      updateStats(JSON.parse(event.data));
+      updateStats(JSON.parse(event.data), ws);
     };
 
     ws.onclose = function (event) {

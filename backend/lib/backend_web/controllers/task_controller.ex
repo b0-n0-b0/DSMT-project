@@ -87,7 +87,6 @@ defmodule BackendWeb.TaskController do
   def show(conn, %{"id" => id}) do
     task = Tasks.get_task!(id, conn.assigns.current_user.id)
     available_clusters = Clusters.list_available_clusters(conn.assigns.current_user.id)
-
     clusters =
       Enum.map(available_clusters, fn %Backend.Clusters.Cluster{id: id, name: name} ->
         # Tuple with display text as name, and value as id
@@ -95,7 +94,7 @@ defmodule BackendWeb.TaskController do
       end)
 
     changeset = %{}
-
+    # TODO: if the status is not "ready" get the cluster associated to the task_id and pass it to the view,
     conn =
       case task.status do
         "failed" ->
@@ -125,14 +124,12 @@ defmodule BackendWeb.TaskController do
       }) do
     task = Tasks.get_task!(id, conn.assigns.current_user.id)
     cluster = Clusters.get_available_cluster!(cluster, conn.assigns.current_user.id)
-    IO.inspect(cluster)
     input = File.read!(input_file.path)
     HTTPoison.start()
 
-    # TODO: change TaskId
     req_body =
       URI.encode_query(%{
-        "TaskId" => "random_task",
+        "TaskId" => id,
         "ErlangModule" => task.erlang_model,
         "Input" => input,
         "ProcessNumber" => processes

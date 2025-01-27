@@ -11,9 +11,28 @@ websocket_init(State) ->
     self() ! send_status,
     {ok, State}.
 
-websocket_handle(Data, State) ->
-    io:format("[ClusterController] -> websocket data from client: ~p~n", [Data]),
-    {ok, State}.
+websocket_handle({text, Data}, State) ->
+    io:format("[ClusterController] -> WebSocket data from client: ~p~n", [Data]),
+    case Data of
+        <<"get_final_result">> ->
+            try
+                Reply = gen_server:call({cowboy_listener, node()}, get_final_result),
+                ReplyBin = list_to_binary(io_lib:format("~p", [Reply])),
+                ReplyJson = jsone:encode( #{<<"final_result">>=> ReplyBin}),
+                io:format("Reply sent to client: ~p~n", [ReplyJson]),
+                {reply, {text, ReplyJson}, State}
+            catch
+                Class:Reason ->
+                    io:format("Error fetching final result: ~p, Reason: ~p~n", [Class, Reason]),
+                    {reply, {text, <<"error">>}, State}
+            end;
+        _ ->
+            io:format("Unexpected request received: ~p~n", [Data]),
+            {reply, {text, <<"unexpected request">>}, State}
+    end;
+websocket_handle(_, State) ->
+    io:format("Invalid WebSocket frame received.~n"),
+    {reply, {text, <<"invalid frame">>}, State}.
 
 websocket_info(send_status, State) ->
     Status = gen_server:call({cowboy_listener, node()}, {ws_request, get_status}),
