@@ -95,6 +95,8 @@ defmodule BackendWeb.TaskController do
 
     changeset = %{}
     # TODO: if the status is not "ready" get the cluster associated to the task_id and pass it to the view,
+    # ChoosenCluster = Clusters.get_cluster_by_taskid!(elem(Integer.parse(id),0), conn.assigns.current_user.id)
+    # IO.inspect(ChoosenCluster)
     conn =
       case task.status do
         "failed" ->
@@ -169,8 +171,10 @@ defmodule BackendWeb.TaskController do
     is_in_list = Enum.member?(valid_status, status)
 
     if is_in_list do
+      # The task is done so the cluster is now free
       Tasks.update_task(task, %{"status" => status})
-
+      cluster = Clusters.get_cluster_by_taskid!(elem(Integer.parse(id),0), conn.assigns.current_user.id)
+      Clusters.update_cluster(cluster, %{"task_id" => nil})
       conn
       |> send_resp(201, "")
     else

@@ -32,6 +32,7 @@ defmodule BackendWeb.ClusterController do
     cluster =
       cluster_params
       |> Map.put("user_id", conn.assigns.current_user.id)
+      |> Map.put("task_id", nil)
     case Clusters.create_cluster(cluster) do
       {:ok, cluster} ->
         conn

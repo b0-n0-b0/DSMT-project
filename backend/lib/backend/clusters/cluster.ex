@@ -15,7 +15,7 @@ defmodule Backend.Clusters.Cluster do
   @doc false
   def changeset(cluster, attrs) do
     cluster
-    |> cast(attrs, [:name, :cluster_api_key, :cluster_controller_url, :user_id])
+    |> cast(attrs, [:name, :cluster_api_key, :cluster_controller_url, :user_id, :task_id])
     |> validate_required([:name, :cluster_api_key, :cluster_controller_url, :user_id])
   end
 end

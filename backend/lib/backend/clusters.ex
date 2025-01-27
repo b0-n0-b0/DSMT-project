@@ -53,6 +53,14 @@ defmodule Backend.Clusters do
     Repo.one!(query)
   end
 
+  def get_cluster_by_taskid!(task_id, user_id) do
+    query =
+      from c in Cluster,
+        where: c.user_id == ^user_id and c.task_id == ^task_id
+
+    Repo.one!(query)
+  end
+
   def get_available_cluster!(id, user_id) do
     query =
       from c in Cluster,
