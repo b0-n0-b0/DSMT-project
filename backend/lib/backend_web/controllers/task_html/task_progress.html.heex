@@ -9,7 +9,7 @@
       document.getElementById('progress-bar').style = `width: ${parseFloat(msg.progress)}%`;
     }
     if (msg.status === "done" || msg.status === "failed") {
-      console.log(msg.status)
+      // TODO: fetch the result and save it
       await fetch('<%= ~p"/tasks/#{@task}/update_status" %>', {
         method: "POST",
         headers: {

@@ -33,7 +33,8 @@ handle_call({setup_erlang_task, TaskId, InputSplitId, ProcessNumber}, _From, Sta
         Result == compilation_error ->
             {reply, {error, "compilation error"}, State};
         Result == export_error ->
-            {reply, {error, "the \"run/1\" function must be exported"}, State};
+            {reply, {error, "the \"run/1\" and the \"aggregate/1\" functions must be exported"},
+                State};
         true ->
             {reply, {done}, #state{
                 monitors = State#state.monitors,
@@ -58,11 +59,12 @@ handle_call(start_erlang_task, _From, State) ->
         input_split_id = State#state.input_split_id,
         processes_number = State#state.processes_number
     }};
-
-handle_call(aggreagate_partial_results, _From, State) ->
+handle_call(aggregate_partial_results, _From, State) ->
     % TODO: get all partial results, execute the aggregate/1 function, put the final result in mnesia
-    io:format("[Worker] -> starting erlang task~n");
-
+    PartialResults = mnesia_utils:get_partial_results_by_taskid(State#state.task_id),
+    io:format("[Worker] -> starting aggregate task~n"),
+    task_utils:execute_erlang_aggregator(PartialResults, State#state.task_id),
+    {reply, {error, aggregate_done}, State};
 % Catch-all clause for unrecognized messages
 handle_call(_UnexpectedMessage, _From, State) ->
     {reply, {error, unsupported_request}, State}.
@@ -77,7 +79,7 @@ handle_info({'DOWN', _Ref, process, Pid, Reason}, State) ->
             case Reason of
                 % the worker has finished the "map" job
                 normal ->
-                    gen_server:call(
+                    gen_server:cast(
                         {cowboy_listener, ControllerNode}, {worker_communication, done}
                     ),
                     {noreply, #state{
@@ -89,7 +91,7 @@ handle_info({'DOWN', _Ref, process, Pid, Reason}, State) ->
                 % something went wrong
                 _ ->
                     task_utils:kill_workers(WorkerPids),
-                    gen_server:call(
+                    gen_server:cast(
                         {cowboy_listener, ControllerNode},
                         {worker_communication,
                             {error, "Task crashed, please re-check the provided module"}}
@@ -102,6 +104,9 @@ handle_info({'DOWN', _Ref, process, Pid, Reason}, State) ->
                     }}
             end;
         _ ->
+            gen_server:cast(
+                {cowboy_listener, ControllerNode}, {worker_communication, aggregate_done}
+            ),
             {noreply, State}
     end;
 %% Catch-all for other messages

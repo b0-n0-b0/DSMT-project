@@ -5,14 +5,32 @@
 
 init(Req, State) ->
     Method = cowboy_req:method(Req),
-    case Method of
-        <<"POST">> ->
-            handle_post(Req, State);
-        _ ->
-            handle_not_found(Req, State)
+    Path = cowboy_req:path(Req),
+    case Path of 
+        % TODO: receive input as file
+        <<"/start_cluster">> ->
+            case Method of
+                <<"POST">> ->
+                    start_cluster(Req, State);
+                _ ->
+                    handle_not_found(Req, State)
+            end;
+        <<"/get_final_result">> ->
+            case Method of
+                <<"GET">> ->
+                    get_final_result(Req, State);
+                _ ->
+                    handle_not_found(Req, State)
+            end
     end.
 
-handle_post(Req, State) ->
+get_final_result(Req, State)->
+    Reply = gen_server:call({cowboy_listener, node()},get_final_result),
+    Reply1 = lists:flatten(io_lib:format("~p",[Reply])),
+    Req1 = cowboy_req:reply(200, #{<<"content-type">> => <<"text/plain">>}, Reply1, Req),
+    {ok, Req1, State}.
+
+start_cluster(Req, State) ->
     {ok, Body, Req2} = cowboy_req:read_urlencoded_body(Req),
     RequiredParams = [<<"TaskId">>, <<"ErlangModule">>, <<"Input">>,<<"ProcessNumber">>],
     case parse_body(Body, RequiredParams)of 

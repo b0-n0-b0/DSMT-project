@@ -5,7 +5,8 @@
     spawn_workers/4,
     start_workers/1,
     kill_workers/1,
-    split_input_per_process/2
+    split_input_per_process/2,
+    execute_erlang_aggregator/2
 ]).
 
 spawn_workers(_, SpawnedProcesses, [], _) ->
@@ -15,6 +16,21 @@ spawn_workers(0, SpawnedProcesses, _, _) ->
 spawn_workers(ProcessesNumber, SpawnedProcesses, [CurrentProcessSplit | Splits], TaskId) ->
     Process = spawn_monitor(fun() -> task_utils:execute_erlang_task(CurrentProcessSplit, TaskId) end),
     spawn_workers(ProcessesNumber - 1, [Process | SpawnedProcesses], Splits, TaskId).
+
+execute_erlang_task(InputSplit, TaskId) ->
+    receive
+        start ->
+            PartialResult = task:run(InputSplit),
+            PartialResultId = random_string:generate(20),
+            mnesia_utils:insert_partial_result(PartialResultId, TaskId, PartialResult)
+    end.
+
+execute_erlang_aggregator(PartialResults, TaskId) ->
+    Process = spawn_monitor(fun() ->
+        FinalResult = task:aggregate(PartialResults),
+        mnesia_utils:write_final_result(TaskId,FinalResult)
+    end),
+    Process.
 
 start_workers(Workers) ->
     maps:foreach(
@@ -36,20 +52,19 @@ setup_erlang_task(TaskModule) ->
             code:load_binary(Module, Filename, Binary),
             Return =
                 case erlang:function_exported(Module, run, 1) of
-                    true -> ok;
-                    false -> export_error
+                    true ->
+                        case erlang:function_exported(Module, aggregate, 1) of
+                            true ->
+                                ok;
+                            false ->
+                                export_error
+                        end;
+                    false ->
+                        export_error
                 end,
             file:delete(Filename)
     end,
     Return.
-
-execute_erlang_task(InputSplit, TaskId) ->
-    receive
-        start ->
-            PartialResult = task:run(InputSplit),
-            PartialResultId = random_string:generate(20),
-            mnesia_utils:insert_partial_result(PartialResultId, TaskId, PartialResult)
-    end.
 
 kill_workers([]) ->
     ok;
@@ -65,7 +80,7 @@ split_input_per_process(List, _, Splits, 1) ->
         [] ->
             Splits;
         _ ->
-        [List | Splits]
+            [List | Splits]
     end;
 split_input_per_process([], _, Splits, _) ->
     Splits;

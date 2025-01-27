@@ -13,7 +13,8 @@
     get_task_code_by_id/1,
     update_task_status/2,
     get_task_by_id/1,
-    get_partial_results_by_taskid/1
+    get_partial_results_by_taskid/1,
+    write_final_result/2
 ]).
 
 %% SETUP
@@ -60,6 +61,14 @@ insert_partial_result(PartialResultId, TaskId, Data) ->
     end,
     mnesia:transaction(Fun).
 
+%% Write final result
+write_final_result(TaskId, Result) ->
+    Fun = fun() ->
+        [T] = mnesia:wread({task, TaskId}),
+        mnesia:write(T#task{final_result = Result})
+    end,
+    mnesia:transaction(Fun).
+
 %% Get partial result by ID
 get_partial_results_by_id(PartialResultId) ->
     Fun = fun() ->
@@ -73,7 +82,7 @@ get_partial_results_by_taskid(TaskId) ->
         mnesia:index_read(partial_result, TaskId, task_id)
     end,
     {_, PartialResults} = mnesia:transaction(Fun),
-    PartialResults.
+    [PartialResult || {_, _, _,PartialResult} <- PartialResults].
 
 %% Get input split by ID
 get_input_split_by_id(InputSplitId) ->

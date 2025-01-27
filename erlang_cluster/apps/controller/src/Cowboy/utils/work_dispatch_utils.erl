@@ -1,6 +1,10 @@
 -module(work_dispatch_utils).
 -export([
-    setup_worker_nodes/4, start_worker_nodes/1, get_available_nodes_list/2, send_updates_to_ws/2
+    setup_worker_nodes/4,
+    start_worker_nodes/1,
+    get_available_nodes_list/2,
+    send_updates_to_ws/2,
+    start_aggregation_process/1
 ]).
 
 setup_worker_nodes([], _, _, _) ->
@@ -13,10 +17,8 @@ setup_worker_nodes([CurrentNode | Nodes], TaskId, [CurrentSplit | InputSplitIds]
     of
         {done} ->
             setup_worker_nodes(Nodes, TaskId, InputSplitIds, ProcessNumber);
-        {error, "compilation error"} ->
-            {error, "compilation error"};
-        {error, "the \"run/1\" function must be exported"} ->
-            {error, "the \"run/1\" function must be exported"}
+        {error, ErrorMessage} ->
+            {error, ErrorMessage}
     end.
 
 start_worker_nodes([]) ->
@@ -35,6 +37,8 @@ get_available_nodes_list([Node | Nodes], AvailableNodes) ->
             get_available_nodes_list(Nodes, [AvailableNodes])
     end.
 
+start_aggregation_process(Node) ->
+    gen_server:call({worker_server, Node}, aggregate_partial_results).
 
 send_updates_to_ws(_, []) ->
     ok;

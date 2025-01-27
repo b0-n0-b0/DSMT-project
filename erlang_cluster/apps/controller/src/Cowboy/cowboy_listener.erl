@@ -2,7 +2,7 @@
 -behaviour(gen_server).
 
 %% API
--export([start_link/0, init/1, handle_call/3, handle_cast/2]).
+-export([start_link/0, init/1, handle_call/3, handle_info/2, handle_cast/2]).
 
 start_link() ->
     io:format("[ClusterController] -> starting mnesia server"),
@@ -19,6 +19,7 @@ routes() ->
         % {OfferEndpoint, socket_listener, []}
         % HTTP: start cluster stuff
         {"/start_cluster", cowboy_http_requests_handler, #{"gen_server" => self()}},
+        {"/get_final_result", cowboy_http_requests_handler, #{"gen_server" => self()}},
         {"/", cowboy_static, {priv_file, controller, "index.html"}},
         % WS: monitoring / control cluster work
         {"/websocket", cowboy_ws_requests_handler, []}
@@ -77,10 +78,8 @@ handle_call({create_erlang_task, [TaskId, TaskModule, Input, ProcessNumber]}, _F
                     Nodes, binary_to_list(TaskId), InputSplitIds, ProcessNumberInteger
                 )
             of
-                {error, "compilation error"} ->
-                    {reply, {error, "compilation error"}, State};
-                {error, "the \"run/1\" function must be exported"} ->
-                    {reply, {error, "the \"run/1\" function must be exported"}, State};
+                {error, ErrorMessage} ->
+                    {reply, {error, ErrorMessage}, State};
                 ok ->
                     work_dispatch_utils:start_worker_nodes(Nodes),
                     io:format("[ClusterController] -> Work dispached~n"),
@@ -95,33 +94,7 @@ handle_call({create_erlang_task, [TaskId, TaskModule, Input, ProcessNumber]}, _F
                     {reply, done, NewState}
             end
     end;
-% handle status messages from the workers
-handle_call({worker_communication, Message}, _From, State) ->
-    case Message of
-        done ->
-            CurrentlyWorkingNodes = maps:get("currently_running_processes", State) - 1,
-            case CurrentlyWorkingNodes of
-                0 ->
-                    io:format("[ClusterController] -> Work done~n"),
-                    mnesia_utils:update_task_status("done", maps:get("current_task", State)),
-                    AllPartialResults = mnesia_utils:get_partial_results_by_taskid(maps:get("current_task",State)),
-                    io:format("_____________________~n~p~n____________________~n", [AllPartialResults]),
-                    work_dispatch_utils:send_updates_to_ws({info, 100.0}, registered());
-                _ ->
-                    Total = maps:get("total_process_number", State),
-                    Progress = ((Total - CurrentlyWorkingNodes) / Total) * 100,
-                    work_dispatch_utils:send_updates_to_ws({info, Progress}, registered()),
-                    ok
-            end;
-        % TODO: handle errors
-        {error, ErrorMessage} ->
-            mnesia_utils:update_task_status("failed", maps:get("current_task", State)),
-            work_dispatch_utils:send_updates_to_ws({info, {error, ErrorMessage}}, registered())
-    end,
-    NewState = maps:put(
-        "currently_running_processes", maps:get("currently_running_processes", State) - 1, State
-    ),
-    {reply, ok, NewState};
+% send current status to ws
 handle_call({ws_request, get_status}, _From, State) ->
     CurrentTask = maps:get("current_task", State),
     case CurrentTask of
@@ -131,10 +104,49 @@ handle_call({ws_request, get_status}, _From, State) ->
             {_, _, _, Status, _} = mnesia_utils:get_task_by_id(maps:get("current_task", State)),
             {reply, Status, State}
     end;
+
+handle_call(get_final_result, _From, State) ->
+    CurrentTask = maps:get("current_task", State),
+    case CurrentTask of
+        null ->
+            {reply, "no_task", State};
+        _ ->
+            {_, _, _, _, FinalResult} = mnesia_utils:get_task_by_id(maps:get("current_task", State)),
+            {reply, FinalResult, State}
+    end;
 % Catch-all clause for unrecognized messages
 handle_call(_, _, State) ->
     io:format("[ClusterController] -> received unexpected request"),
     {reply, {error, unsupported_request}, State}.
-
-handle_cast(_, State) ->
+handle_info(Other, State) ->
+    io:format("[ClusterController] -> Received unexpected message: ~p~n", [Other]),
     {noreply, State}.
+
+% handle status messages from the workers
+handle_cast({worker_communication, Message}, State) ->
+    case Message of
+        done ->
+            CurrentlyWorkingNodes = maps:get("currently_running_processes", State) - 1,
+            case CurrentlyWorkingNodes of
+                0 ->
+                    io:format("[ClusterController] -> Work done~n"),
+                    mnesia_utils:update_task_status("done", maps:get("current_task", State)),
+                    [Node | _] = maps:get("available_nodes", State),
+                    work_dispatch_utils:start_aggregation_process(Node),
+                    work_dispatch_utils:send_updates_to_ws({info, 100.0}, registered());
+                _ ->
+                    Total = maps:get("total_process_number", State),
+                    Progress = ((Total - CurrentlyWorkingNodes) / Total) * 100,
+                    work_dispatch_utils:send_updates_to_ws({info, Progress}, registered()),
+                    ok
+            end;
+        {error, ErrorMessage} ->
+            mnesia_utils:update_task_status("failed", maps:get("current_task", State)),
+            work_dispatch_utils:send_updates_to_ws({info, {error, ErrorMessage}}, registered());
+        aggregate_done ->
+            io:format("[ClusterController] -> Aggregation done~n")
+    end,
+    NewState = maps:put(
+        "currently_running_processes", maps:get("currently_running_processes", State) - 1, State
+    ),
+    {noreply, NewState}.
