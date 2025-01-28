@@ -103,8 +103,14 @@ get_task_by_id(TaskId) ->
     Fun = fun() ->
         mnesia:read(task, TaskId)
     end,
-    {_, [Task | _Rest]} = mnesia:transaction(Fun),
-    Task.
+    case mnesia:transaction(Fun) of
+        {atomic, [Task | _Rest]} ->
+            Task;
+        {atomic, []} ->
+            undefined; % Default return value if no task is found
+        {aborted, Reason} ->
+            {error, Reason} % Return an error tuple if the transaction fails
+    end.
 
 %% util for input split IDs
 create_input_split_ids(_, 0, SplitIds) ->
