@@ -15,6 +15,7 @@ websocket_handle({text, Data}, State) ->
     ReceivedJson = jsone:decode(Data),
     Command = maps:get(<<"command">>,ReceivedJson),
     case Command of
+        % TODO: fix that if the task does not exist the controller crushes
         <<"get_final_result">> ->
             try
                 TaskId = binary_to_list(maps:get(<<"task_id">>,ReceivedJson)),

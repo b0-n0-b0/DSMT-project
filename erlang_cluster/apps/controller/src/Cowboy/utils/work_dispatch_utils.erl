@@ -34,7 +34,7 @@ get_available_nodes_list([Node | Nodes], AvailableNodes) ->
         pong ->
             get_available_nodes_list(Nodes, [Node | AvailableNodes]);
         pang ->
-            get_available_nodes_list(Nodes, [AvailableNodes])
+            get_available_nodes_list(Nodes, AvailableNodes)
     end.
 
 start_aggregation_process(Node) ->

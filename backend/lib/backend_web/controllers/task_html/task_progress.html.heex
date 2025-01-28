@@ -30,8 +30,10 @@
   }
 
   function connect() {
-    var host = window.document.location.host.replace(/:.*/, '');
-    var ws = new WebSocket('ws://' + host + ':1337/websocket');  // standalone config
+    var url = new URL("<%= @task.controller_url %>");
+    var host = url.hostname
+    var port = url.port
+    var ws = new WebSocket('ws://' + host + ':'+port+'/websocket');  
     ws.onopen = function () {
       console.log("connected to websocket");
       setInterval(function () { var date = new Date(); ws.send(JSON.stringify({ 'keepalive': date.getTime() })); }, 30000);

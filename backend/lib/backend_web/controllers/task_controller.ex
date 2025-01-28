@@ -150,7 +150,10 @@ defmodule BackendWeb.TaskController do
         |> redirect(to: ~p"/tasks/#{id}")
 
       {:ok, %HTTPoison.Response{status_code: 201}} ->
+        # change status and save the controller URL, so that we can use it later to retrieve the final result on demand
+        # we're not using the task_id in cluster cause it will be removed once the cluster becomes "free"
         Tasks.update_task(task, %{"status" => "running"})
+        Tasks.update_task(task, %{"controller_url" => cluster.cluster_controller_url})
         Clusters.update_cluster(cluster, %{"task_id" => id})
 
         conn
