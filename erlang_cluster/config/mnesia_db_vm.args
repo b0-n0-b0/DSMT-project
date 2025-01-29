@@ -1,6 +1,0 @@
--sname mnesia_db
-
--setcookie system_cookie
-
-+K true
-+A30

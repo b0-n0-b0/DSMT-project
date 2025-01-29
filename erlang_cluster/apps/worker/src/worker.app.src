@@ -8,7 +8,7 @@
         stdlib
     ]},
     {env, [
-        {controller_node, controller@fedora}
+        {controller_node, 'controller@127.0.0.1'}
     ]},
     {modules, []},
     {licenses, ["Apache-2.0"]},

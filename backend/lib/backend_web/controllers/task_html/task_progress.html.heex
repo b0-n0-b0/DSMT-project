@@ -10,16 +10,15 @@
     if (msg.progress) {
       document.getElementById('progress-bar').style = `width: ${parseFloat(msg.progress)}%`;
     }
-    if (msg.status === "done" || msg.status === "failed") {
+
+    if (msg.progress == 100 || msg.status === "failed") {
       await fetch('<%= ~p"/tasks/#{@task}/update_status" %>', {
         method: "POST",
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
           'x-csrf-token': '<%= @csrf %>'
         },
-        body: new URLSearchParams({
-          'status': msg.status
-        })
+        body: new URLSearchParams({ 'status': encodeURIComponent(msg.status) })
       }).then(response => {
         if (response.status === 201) {
           location.reload();
@@ -33,7 +32,7 @@
     var url = new URL("<%= @task.controller_url %>");
     var host = url.hostname
     var port = url.port
-    var ws = new WebSocket('ws://' + host + ':'+port+'/websocket');  
+    var ws = new WebSocket('ws://' + host + ':' + port + '/websocket');
     ws.onopen = function () {
       console.log("connected to websocket");
       setInterval(function () { var date = new Date(); ws.send(JSON.stringify({ 'keepalive': date.getTime() })); }, 30000);

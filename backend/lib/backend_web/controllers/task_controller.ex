@@ -87,6 +87,7 @@ defmodule BackendWeb.TaskController do
   def show(conn, %{"id" => id}) do
     task = Tasks.get_task!(id, conn.assigns.current_user.id)
     available_clusters = Clusters.list_available_clusters(conn.assigns.current_user.id)
+
     clusters =
       Enum.map(available_clusters, fn %Backend.Clusters.Cluster{id: id, name: name} ->
         # Tuple with display text as name, and value as id
@@ -94,6 +95,7 @@ defmodule BackendWeb.TaskController do
       end)
 
     changeset = %{}
+
     # TODO: if the status is not "ready" get the cluster associated to the task_id and pass it to the view,
     # ChoosenCluster = Clusters.get_cluster_by_taskid!(elem(Integer.parse(id),0), conn.assigns.current_user.id)
     # IO.inspect(ChoosenCluster)
@@ -125,22 +127,29 @@ defmodule BackendWeb.TaskController do
         "processes" => processes
       }) do
     task = Tasks.get_task!(id, conn.assigns.current_user.id)
+    content = File.read!(input_file.path)
     cluster = Clusters.get_available_cluster!(cluster, conn.assigns.current_user.id)
-    input = File.read!(input_file.path)
     HTTPoison.start()
 
-    req_body =
-      URI.encode_query(%{
-        "TaskId" => id,
-        "ErlangModule" => task.erlang_model,
-        "Input" => input,
-        "ProcessNumber" => processes
-      })
+    form = [
+      {"Input", content},
+      {"TaskId", id},
+      {"ProcessNumber", processes},
+      {"ErlangModule", task.erlang_model}
+    ]
+
+    # req_body =
+    #   URI.encode_query(%{
+    #     "TaskId" => id,
+    #     "ErlangModule" => task.erlang_model,
+    #     "Input" => input,
+    #     "ProcessNumber" => processes
+    #   })
 
     case HTTPoison.post(
            "#{cluster.cluster_controller_url}/start_cluster",
-           req_body,
-           %{"Content-Type" => "application/x-www-form-urlencoded"}
+           {:multipart, form},
+           %{"Content-Type" => "multipart/form-data"}
          ) do
       {:ok, %{status_code: 400, body: body}} ->
         IO.puts("Error 400: #{body}")
@@ -176,8 +185,12 @@ defmodule BackendWeb.TaskController do
     if is_in_list do
       # The task is done so the cluster is now free
       Tasks.update_task(task, %{"status" => status})
-      cluster = Clusters.get_cluster_by_taskid!(elem(Integer.parse(id),0), conn.assigns.current_user.id)
+
+      cluster =
+        Clusters.get_cluster_by_taskid!(elem(Integer.parse(id), 0), conn.assigns.current_user.id)
+
       Clusters.update_cluster(cluster, %{"task_id" => nil})
+
       conn
       |> send_resp(201, "")
     else

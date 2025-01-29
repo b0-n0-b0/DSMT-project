@@ -17,12 +17,6 @@ defmodule BackendWeb.Router do
     plug :accepts, ["json"]
   end
 
-  # scope "/", BackendWeb do
-  #   pipe_through :browser
-
-  #   get "/", PageController, :home
-  # end
-
   ## Authentication routes
 
   scope "/", BackendWeb do

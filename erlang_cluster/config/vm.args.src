@@ -1,4 +1,4 @@
--sname ${NODE_NAME:-worker}
+-name ${NODE_NAME:-worker@127.0.0.1}
 
 -setcookie antonio
 

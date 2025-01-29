@@ -13,25 +13,31 @@ websocket_init(State) ->
 websocket_handle({text, Data}, State) ->
     io:format("[ClusterController] -> WebSocket data from client: ~p~n", [Data]),
     ReceivedJson = jsone:decode(Data),
-    Command = maps:get(<<"command">>,ReceivedJson),
-    case Command of
-        % TODO: fix that if the task does not exist the controller crushes
-        <<"get_final_result">> ->
-            try
-                TaskId = binary_to_list(maps:get(<<"task_id">>,ReceivedJson)),
-                Reply = gen_server:call({cowboy_listener, node()}, {get_final_result,TaskId}),
-                ReplyBin = list_to_binary(io_lib:format("~p", [Reply])),
-                ReplyJson = jsone:encode(#{<<"final_result">> => ReplyBin}),
-                {reply, {text, ReplyJson}, State}
-            catch
-                Class:Reason ->
-                    io:format("Error fetching final result: ~p, Reason: ~p~n", [Class, Reason]),
-                    {reply, {text, <<"error">>}, State}
-            end;
-        _ ->
-            io:format("Unexpected request received: ~p~n", [Data]),
-            {reply, {text, <<"unexpected request">>}, State}
+    case maps:keys(ReceivedJson)of 
+        <<"keepalive">> ->
+            {reply, ok,State};
+        [<<"command">>,<<"task_id">>] ->
+            Command = maps:get(<<"command">>,ReceivedJson),
+            case Command of
+                % TODO: fix that if the task does not exist the controller crushes
+                <<"get_final_result">> ->
+                    try
+                        TaskId = binary_to_list(maps:get(<<"task_id">>,ReceivedJson)),
+                        Reply = gen_server:call({cowboy_listener, node()}, {get_final_result,TaskId}),
+                        ReplyBin = list_to_binary(io_lib:format("~p", [Reply])),
+                        ReplyJson = jsone:encode(#{<<"final_result">> => ReplyBin}),
+                        {reply, {text, ReplyJson}, State}
+                    catch
+                        Class:Reason ->
+                            io:format("Error fetching final result: ~p, Reason: ~p~n", [Class, Reason]),
+                            {reply, {text, <<"error">>}, State}
+                    end;
+                _ ->
+                    io:format("Unexpected request received: ~p~n", [Data]),
+                    {reply, {text, <<"unexpected request">>}, State}
+            end
     end;
+
 websocket_handle(_, State) ->
     io:format("Invalid WebSocket frame received.~n"),
     {reply, {text, <<"invalid frame">>}, State}.
