@@ -159,7 +159,6 @@ update_task_status(Value, TaskId) ->
 %%CLEANUP
 remove_task(TaskId) ->
     Fun = fun() ->
-        mnesia:delete(task, TaskId, write),
         mnesia:delete(input_split, TaskId, write),
         mnesia:delete(partial_result, TaskId, write)
     end,

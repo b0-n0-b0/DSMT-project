@@ -60,7 +60,6 @@ handle_call(start_erlang_task, _From, State) ->
         processes_number = State#state.processes_number
     }};
 handle_call(aggregate_partial_results, _From, State) ->
-    % TODO: get all partial results, execute the aggregate/1 function, put the final result in mnesia
     PartialResults = mnesia_utils:get_partial_results_by_taskid(State#state.task_id),
     io:format("[Worker] -> starting aggregate task~n"),
     task_utils:execute_erlang_aggregator(PartialResults, State#state.task_id),

@@ -19,7 +19,6 @@ websocket_handle({text, Data}, State) ->
         [<<"command">>,<<"task_id">>] ->
             Command = maps:get(<<"command">>,ReceivedJson),
             case Command of
-                % TODO: fix that if the task does not exist the controller crushes
                 <<"get_final_result">> ->
                     try
                         TaskId = binary_to_list(maps:get(<<"task_id">>,ReceivedJson)),
@@ -58,7 +57,6 @@ websocket_info({info, Info}, State) ->
             {reply, {text, StateJson}, State};
         _ ->
             Status = gen_server:call({cowboy_listener, node()}, {ws_request, get_status}),
-            % TODO: cleanup partial results + inputsplits if status is done
             StateJson = jsone:encode(#{
                 <<"status">> => list_to_binary(Status),
                 <<"progress">> => list_to_binary(float_to_list(Info))

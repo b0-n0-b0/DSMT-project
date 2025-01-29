@@ -136,6 +136,7 @@ handle_cast({worker_communication, Message}, State) ->
             mnesia_utils:update_task_status("failed", maps:get("current_task", State)),
             work_dispatch_utils:send_updates_to_ws({info, {error, ErrorMessage}}, registered());
         aggregate_done ->
+            mnesia_utils:remove_task(maps:get("current_task", State)),%% cleanup of partial results and input splits
             io:format("[ClusterController] -> Aggregation done~n")
     end,
     NewState = maps:put(

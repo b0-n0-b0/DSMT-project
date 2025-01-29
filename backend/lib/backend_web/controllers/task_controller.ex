@@ -96,9 +96,6 @@ defmodule BackendWeb.TaskController do
 
     changeset = %{}
 
-    # TODO: if the status is not "ready" get the cluster associated to the task_id and pass it to the view,
-    # ChoosenCluster = Clusters.get_cluster_by_taskid!(elem(Integer.parse(id),0), conn.assigns.current_user.id)
-    # IO.inspect(ChoosenCluster)
     conn =
       case task.status do
         "failed" ->

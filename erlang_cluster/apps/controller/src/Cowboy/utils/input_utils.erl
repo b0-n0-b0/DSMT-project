@@ -8,8 +8,6 @@ input_line_tokenizer(Input) ->
     lists:map(fun(Split) -> binary_to_list(Split) end, NewSplits).
 
 % there is less then 1 input per worker, we assign all the work to a single worker 
-% TODO: there is a better splitting possible (first node is overloaded in this case) but 
-% It's something to implement if I have time
 input_splitter(List, 0, _, _)->
     [List];
 input_splitter(List, _, Splits, 1)->
