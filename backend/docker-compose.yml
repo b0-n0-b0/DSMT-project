@@ -1,0 +1,31 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15
+    container_name: postgres_dsmt
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: backend_dev
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./priv/repo/structure.sql:/docker-entrypoint-initdb.d/structure.sql
+
+  app:
+    build: .
+    depends_on:
+      - db
+    environment:
+      DATABASE_URL: "ecto://postgres:postgres@db/backend_dev"
+    ports:
+      - "4000:4000"
+    volumes:
+      - .:/app
+    command: ["mix", "phx.server"]
+
+volumes:
+  pgdata:
