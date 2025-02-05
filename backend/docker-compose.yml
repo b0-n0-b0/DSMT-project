@@ -22,9 +22,7 @@ services:
     environment:
       DATABASE_URL: "ecto://postgres:postgres@db/backend_dev"
     ports:
-      - "4000:4000"
-    volumes:
-      - .:/app
+      - "5000:5000"
     command: ["mix", "phx.server"]
 
 volumes:

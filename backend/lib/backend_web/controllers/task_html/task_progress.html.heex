@@ -11,7 +11,7 @@
       document.getElementById('progress-bar').style = `width: ${parseFloat(msg.progress)}%`;
     }
 
-    if (msg.progress == 100 || msg.status === "failed") {
+    if (msg.progress == 100 || msg.status === "failed" || msg.status === "done") {
       await fetch('<%= ~p"/tasks/#{@task}/update_status" %>', {
         method: "POST",
         headers: {
@@ -39,6 +39,7 @@
     };
 
     ws.onmessage = function (event) {
+      console.log(JSON.parse(event.data))
       updateStats(JSON.parse(event.data), ws);
     };
 
