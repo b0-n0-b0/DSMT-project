@@ -18,7 +18,6 @@
 ]).
 
 %% SETUP
-%% TODO: add a section for replica setup
 create_tables() ->
     mnesia:create_table(
         task,

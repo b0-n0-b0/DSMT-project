@@ -25,7 +25,6 @@ routes() ->
     {Routes}.
 
 init(_) ->
-    % TODO: take from env
     Port = 1337,
     {Routes} = routes(),
 
